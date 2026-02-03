@@ -1,51 +1,34 @@
-<script type="text/babel">
-    // ... (States remain same)
+{tab === 'setup' && (
+    <div className="ui-card p-6 space-y-4 shadow-sm animate-in fade-in">
+        {/* Dark Mode Toggle */}
+        <button onClick={() => setDarkMode(!darkMode)} className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex justify-between items-center font-bold">
+            {darkMode ? 'Light Mode' : 'Dark Mode'} <Icon name={darkMode ? 'sun' : 'moon'} className="text-blue-500" />
+        </button>
 
-    return (
-        <div className={`min-h-screen ${darkMode ? 'dark bg-[#0f172a]' : 'bg-[#f7f9fc]'}`}>
-            {/* SETUP TAB Logic */}
-            {tab === 'setup' && (
-                <div className="px-6 space-y-4 animate-in fade-in">
-                    <div className="ui-card p-6 space-y-6">
-                        <div>
-                            <p className="text-[10px] font-bold opacity-40 uppercase mb-3">Preferences</p>
-                            <button onClick={() => setDarkMode(!darkMode)} className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex justify-between items-center font-bold text-sm transition-all border border-transparent active:scale-95">
-                                {darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'} 
-                                <Icon name={darkMode ? 'sun' : 'moon'} className={darkMode ? 'text-yellow-400' : 'text-blue-600'} />
-                            </button>
-                        </div>
-
-                        <div>
-                            <p className="text-[10px] font-bold opacity-40 uppercase mb-3">Monthly Goal ({currency})</p>
-                            <input 
-                                type="number" 
-                                value={goal} 
-                                onChange={(e)=>setGoal(e.target.value)} 
-                                className="w-full p-4 rounded-2xl font-black outline-none border-none bg-slate-50 dark:bg-slate-800 focus:ring-2 ring-blue-500"
-                            />
-                        </div>
-
-                        <div className="pt-4 border-t border-slate-100 dark:border-slate-700 space-y-3">
-                            {/* SUPPORT & FEEDBACK */}
-                            <a href="mailto:support@fintrack.com" className="w-full p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex justify-between items-center font-bold text-sm active:scale-95 transition-transform">
-                                Support & Feedback <Icon name="mail" />
-                            </a>
-
-                            {/* PRIVACY POLICY */}
-                            <button onClick={() => alert("Your data is stored locally on this device only.")} className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex justify-between items-center font-bold text-sm opacity-70">
-                                Privacy Policy <Icon name="shield-check" />
-                            </button>
-                        </div>
-
-                        <button onClick={() => confirm("Wipe all data?") && localStorage.clear()} className="w-full py-4 text-rose-500 font-black text-[10px] uppercase tracking-[0.2em] mt-4">
-                            Reset Application
-                        </button>
-                    </div>
-                </div>
-            )}
-            
-            {/* Plus Button logic (Ad-disabled for now) */}
-            <button onClick={() => setModal(true)} ... />
+        {/* Goal Input */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+            <p className="text-[10px] font-bold opacity-40 uppercase mb-2">Monthly Goal</p>
+            <input type="number" value={goal} onChange={(e)=>setGoal(e.target.value)} className="bg-transparent w-full font-black text-xl outline-none" />
         </div>
-    );
-</script>
+
+        {/* Support & Privacy Section */}
+        <div className="pt-4 border-t dark:border-slate-700 space-y-3">
+            <a href="mailto:support@fintrack.com" className="flex justify-between items-center p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl font-bold transition-transform active:scale-95">
+                Support & Feedback <Icon name="mail" />
+            </a>
+
+            {/* --- NEW PRIVACY POLICY CARD --- */}
+            <button 
+                onClick={() => alert("Privacy Policy:\n\n1. All your financial data is stored locally on your device.\n2. We do not collect, share, or upload your personal logs to any server.\n3. Your privacy is 100% protected as the app works offline.")}
+                className="w-full flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl font-bold opacity-80"
+            >
+                Privacy Policy <Icon name="shield-check" />
+            </button>
+            {/* ------------------------------- */}
+        </div>
+
+        <button onClick={() => confirm("Are you sure you want to wipe all data?") && setLogs([])} className="w-full py-4 text-rose-500 font-bold text-xs uppercase tracking-widest">
+            Reset Application
+        </button>
+    </div>
+)}
