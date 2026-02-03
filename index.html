@@ -3,182 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro | Fynovo Studio</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-
+    <title>SmartSpend Elite | Fynovo Studio</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        * { -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; }
-        
-        .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
-        .dark .ui-card { background: #1e293b !important; border-color: #334155 !important; }
-        .dark .nav-bar { background: #1e293b !important; border-top: 1px solid #334155 !important; }
+        :root {
+            --brand: #6366f1; --brand-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --bg: #0f172a; --surface: #1e293b; --surface-lighter: #334155;
+            --text-primary: #f8fafc; --text-secondary: #94a3b8; --border: rgba(255,255,255,0.08);
+        }
 
-        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2.5rem; transition: all 0.3s ease; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; height: 90px; z-index: 50; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-primary); height: 100vh; overflow: hidden; }
+
+        /* Onboarding Screen */
+        #onboarding {
+            position: fixed; inset: 0; background: var(--bg); z-index: 5000;
+            display: none; flex-direction: column; padding: 40px 24px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .welcome-step { text-align: center; margin-bottom: 40px; }
+        .logo-circle { width: 80px; height: 80px; background: var(--brand-gradient); border-radius: 24px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
+
+        .currency-picker-container {
+            background: var(--surface); border-radius: 24px; border: 1px solid var(--border);
+            flex: 1; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        .search-bar { padding: 16px; border-bottom: 1px solid var(--border); position: relative; }
+        .search-bar i { position: absolute; left: 28px; top: 30px; color: var(--text-secondary); }
+        .search-bar input { width: 100%; padding: 12px 12px 12px 40px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-lighter); color: white; }
+
+        #currency-scroll-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .currency-item { padding: 16px; border-radius: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; cursor: pointer; }
+        .currency-item:active { background: var(--brand); }
+        .currency-item.selected { background: var(--brand-gradient); color: white; }
+
+        /* Main App Pages */
+        .page { display: none; height: 100vh; overflow-y: auto; padding: 24px 20px 120px; }
+        .page.active { display: block; }
+        .dashboard-card { background: var(--brand-gradient); padding: 30px; border-radius: 32px; color: white; margin-bottom: 28px; }
         
-        .btn-press:active { transform: scale(0.94); opacity: 0.9; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-ui { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: 15px; }
+        .nav-item { color: var(--text-secondary); text-align: center; font-size: 10px; text-transform: uppercase; font-weight: 700; cursor: pointer; }
+        .nav-item.active { color: var(--brand); }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 5px; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .tx-card { background: var(--surface); padding: 16px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     </style>
 </head>
-<body class="bg-[#f8fafc] text-[#1e293b]">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+    <div id="onboarding">
+        <div class="welcome-step">
+            <div class="logo-circle"><i class="fas fa-vault"></i></div>
+            <h2 style="font-weight: 800;">Welcome to SmartSpend</h2>
+            <p style="color: var(--text-secondary); margin-top: 8px;">Let's set your primary currency to start.</p>
+        </div>
 
-        const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
-        };
-
-        const CATS = {
-            INCOME: [{ id: 'i1', n: 'Salary', i: 'banknote' }, { id: 'i2', n: 'Business', i: 'briefcase' }, { id: 'i3', n: 'Gift', i: 'gift' }],
-            EXPENSE: [{ id: 'e1', n: 'Food', i: 'utensils' }, { id: 'e2', n: 'Fuel', i: 'fuel' }, { id: 'e3', n: 'Bills', i: 'zap' }, { id: 'e4', n: 'Home', i: 'home' }, { id: 'e5', n: 'Other', i: 'layers' }]
-        };
-
-        function App() {
-            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_v_pro_stable')) || []);
-            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
-            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
-            const [tab, setTab] = useState('dashboard');
-            const [modal, setModal] = useState(false);
-            const [showPrivacy, setShowPrivacy] = useState(false);
-
-            const [type, setType] = useState('EXPENSE');
-            const [cat, setCat] = useState(CATS.EXPENSE[0]);
-            const [amt, setAmt] = useState('');
-
-            useEffect(() => {
-                localStorage.setItem('ft_v_pro_stable', JSON.stringify(logs));
-                localStorage.setItem('ft_dark', darkMode);
-                localStorage.setItem('ft_cur', currency);
-                document.documentElement.classList.toggle('dark', darkMode);
-            }, [logs, darkMode, currency]);
-
-            useEffect(() => { setCat(CATS[type][0]); }, [type]);
-
-            const analytics = useMemo(() => {
-                const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + b.amt, 0);
-                const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + b.amt, 0);
-                const catGroup = logs.filter(l => l.type === 'EXPENSE').reduce((acc, curr) => {
-                    acc[curr.cat.n] = (acc[curr.cat.n] || 0) + curr.amt;
-                    return acc;
-                }, {});
-                return { bal: inc - exp, inc, exp, catGroup };
-            }, [logs, currency]);
-
-            const handleSave = () => {
-                const val = parseFloat(amt);
-                if (!val || val <= 0) return;
-                const entry = { id: Date.now(), amt: val, type, cat, date: new Date().toLocaleDateString('en-GB') };
-                setLogs([entry, ...logs]);
-                setModal(false);
-                setAmt('');
-            };
-
-            return (
-                <div className="min-h-screen max-w-md mx-auto pb-32 relative">
-                    <header className="p-8 flex justify-between items-center">
-                        <div>
-                            <h1 className="text-2xl font-black text-blue-600 italic tracking-tighter uppercase">{tab}</h1>
-                            <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em]">by Fynovo Studio</p>
-                        </div>
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-4 rounded-3xl bg-white dark:bg-slate-800 shadow-sm btn-press">
-                            <Icon name={darkMode ? 'sun' : 'moon'} className="text-blue-500" />
-                        </button>
-                    </header>
-
-                    <main className="px-6 space-y-6">
-                        {tab === 'dashboard' && (
-                            <div className="space-y-6 animate-ui">
-                                <div className="ui-card p-10 text-center bg-gradient-to-br from-blue-600 to-blue-800 text-white border-none shadow-2xl">
-                                    <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Total Balance</p>
-                                    <h2 className="text-4xl font-black">{currency} {analytics.bal.toLocaleString()}</h2>
-                                    <div className="mt-6 flex justify-between text-[11px] font-black uppercase opacity-90 border-t border-white/10 pt-4">
-                                        <div className="text-emerald-300">Income: {analytics.inc.toLocaleString()}</div>
-                                        <div className="text-rose-300">Expense: {analytics.exp.toLocaleString()}</div>
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    {logs.slice(0, 10).map(l => (
-                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-3xl flex items-center justify-center ${l.type==='INCOME'?'bg-emerald-500/10 text-emerald-500':'bg-rose-500/10 text-rose-500'}`}><Icon name={l.cat.i} /></div>
-                                                <div><p className="font-bold text-sm">{l.cat.n}</p><p className="text-[10px] opacity-40 font-bold">{l.date}</p></div>
-                                            </div>
-                                            <p className={`font-black ${l.type==='INCOME'?'text-emerald-500':'text-rose-500'}`}>{l.type==='INCOME'?'+':'-'}{l.amt}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {tab === 'setup' && (
-                            <div className="ui-card p-6 space-y-6 animate-ui">
-                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-[2rem]">
-                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-3 px-2">Currency</p>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {['AED', 'USD', 'PKR', 'INR'].map(c => (
-                                            <button key={c} onClick={()=>setCurrency(c)} className={`py-3 rounded-2xl font-bold text-xs ${currency===c?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 opacity-40'}`}>{c}</button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="pt-4 border-t dark:border-slate-700 space-y-3">
-                                    <button onClick={() => setShowPrivacy(true)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-[2rem] font-bold text-sm btn-press">Privacy Policy <Icon name="shield-check" className="text-blue-600"/></button>
-                                    <a href="mailto:fynovostudio@gmail.com" className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-[2rem] font-bold text-sm btn-press">Support & Feedback <Icon name="mail" className="text-blue-600" /></a>
-                                    <div className="text-center py-4 text-[10px] font-black opacity-20 uppercase tracking-[0.3em]">
-                                        Proudly Developed by Fynovo Studio
-                                    </div>
-                                    <button onClick={() => confirm("Clear all?") && setLogs([])} className="w-full py-4 text-rose-500 font-bold text-[10px] uppercase tracking-[0.4em] opacity-40">Reset App</button>
-                                </div>
-                            </div>
-                        )}
-                    </main>
-
-                    <button onClick={() => setModal(true)} className="fixed bottom-32 right-8 w-16 h-16 bg-blue-600 text-white rounded-[2.2rem] flex items-center justify-center shadow-2xl z-40 btn-press"><Icon name="plus" size={32}/></button>
-
-                    {modal && (
-                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col ${darkMode ? 'bg-[#0f172a]' : 'bg-white'}`}>
-                            <div className="flex justify-between items-center mb-8">
-                                <h2 className="text-xl font-black uppercase">New Entry</h2>
-                                <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={32}/></button>
-                            </div>
-                            <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-[2.5rem] mb-8">
-                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-[2rem] font-black text-xs uppercase ${type==='INCOME'?'bg-blue-600 text-white':'opacity-40'}`}>Income</button>
-                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-[2rem] font-black text-xs uppercase ${type==='EXPENSE'?'bg-blue-600 text-white':'opacity-40'}`}>Expense</button>
-                            </div>
-                            <input type="number" value={amt} onChange={(e)=>setAmt(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full mb-auto outline-none" autoFocus />
-                            <button onClick={handleSave} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-black text-xl btn-press">SAVE TRANSACTION</button>
-                        </div>
-                    )}
-
-                    {showPrivacy && (
-                        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md p-6 flex items-end">
-                            <div className={`w-full p-10 rounded-[3.5rem] ${darkMode?'bg-slate-900':'bg-white'}`}>
-                                <h2 className="text-2xl font-black mb-6 italic text-blue-600">Fynovo Studio Privacy</h2>
-                                <p className="text-sm opacity-60 font-bold mb-8 uppercase leading-relaxed">• Your financial data is stored only on this device.<br/>• Fynovo Studio has no access to your logs.<br/>• Offline first security enabled.</p>
-                                <button onClick={()=>setShowPrivacy(false)} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase btn-press">Understood</button>
-                            </div>
-                        </div>
-                    )}
-
-                    <nav className="nav-bar flex justify-around items-center px-10 pb-4">
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1 ${tab==='dashboard'?'text-blue-600':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
-                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1 ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
-                    </nav>
+        <div class="currency-picker-container">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="currency-search" placeholder="Search currency (e.g. USD, PKR, EUR)" onkeyup="filterCurrencies()">
+            </div>
+            <div id="currency-scroll-list">
                 </div>
-            );
+        </div>
+
+        <button onclick="finishOnboarding()" style="width:100%; padding: 18px; border-radius: 18px; border: none; background: var(--brand-gradient); color: white; font-weight: 800; font-size: 16px; margin-top: 20px;">
+            Get Started
+        </button>
+    </div>
+
+    <div id="home" class="page">
+        <div class="dashboard-card">
+            <small style="opacity:0.8; font-weight:700">TOTAL BALANCE</small>
+            <h1 id="main-balance" style="font-size: 32px; margin: 10px 0;">--</h1>
+            <div id="comp-label" style="font-size: 12px; opacity: 0.7;">Fynovo Studio Vault</div>
+        </div>
+        <h3 style="margin-bottom:15px;">Activity</h3>
+        <div id="tx-history"></div>
+    </div>
+
+    <div id="settings" class="page">
+        <h2 style="margin-bottom:24px;">Settings</h2>
+        <div class="tx-card">
+            <span>Primary Currency</span>
+            <b id="active-cur-display" style="color: var(--brand)">$</b>
+        </div>
+        <div class="tx-card" onclick="localStorage.clear(); location.reload();" style="color: var(--danger)">
+            <span>Reset App Data</span>
+            <i class="fas fa-refresh"></i>
+        </div>
+        <div style="margin-top: 20px; text-align: center; opacity: 0.5; font-size: 12px;">
+            <p>Developer: Fynovo Studio</p>
+            <p>Support: fynovostudio@gmail.com</p>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="nav('home', this)"><i class="fas fa-wallet"></i><span>Vault</span></div>
+        <div class="nav-item" onclick="nav('settings', this)"><i class="fas fa-gear"></i><span>Settings</span></div>
+    </nav>
+
+    <script>
+        // Comprehensive Currency List (ISO 4217)
+        const globalCurrencies = [
+            { code: "USD", symbol: "$", name: "United States Dollar" },
+            { code: "PKR", symbol: "Rs", name: "Pakistani Rupee" },
+            { code: "EUR", symbol: "€", name: "Euro" },
+            { code: "GBP", symbol: "£", name: "British Pound" },
+            { code: "INR", symbol: "₹", name: "Indian Rupee" },
+            { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
+            { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
+            { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+            { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+            { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+            { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
+            { code: "TRY", symbol: "₺", name: "Turkish Lira" },
+            { code: "BRL", symbol: "R$", name: "Brazilian Real" },
+            { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
+            { code: "ZAR", symbol: "R", name: "South African Rand" }
+            // Add more as needed, or fetch from an API in production
+        ];
+
+        let selectedCur = null;
+
+        function checkFirstTime() {
+            const hasSet = localStorage.getItem('elite_onboarded');
+            if (!hasSet) {
+                document.getElementById('onboarding').style.display = 'flex';
+                renderCurrencyList(globalCurrencies);
+            } else {
+                document.getElementById('home').classList.add('active');
+                renderApp();
+            }
         }
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+
+        function renderCurrencyList(list) {
+            const container = document.getElementById('currency-scroll-list');
+            container.innerHTML = list.map(cur => `
+                <div class="currency-item ${selectedCur?.code === cur.code ? 'selected' : ''}" onclick="selectCurrency('${cur.code}')">
+                    <span>${cur.name} (${cur.code})</span>
+                    <b>${cur.symbol}</b>
+                </div>
+            `).join('');
+        }
+
+        function filterCurrencies() {
+            const term = document.getElementById('currency-search').value.toLowerCase();
+            const filtered = globalCurrencies.filter(c => 
+                c.name.toLowerCase().includes(term) || c.code.toLowerCase().includes(term)
+            );
+            renderCurrencyList(filtered);
+        }
+
+        function selectCurrency(code) {
+            selectedCur = globalCurrencies.find(c => c.code === code);
+            renderCurrencyList(globalCurrencies);
+        }
+
+        function finishOnboarding() {
+            if (!selectedCur) return alert("Please select a currency");
+            localStorage.setItem('elite_cur', selectedCur.symbol);
+            localStorage.setItem('elite_onboarded', 'true');
+            document.getElementById('onboarding').style.display = 'none';
+            document.getElementById('home').classList.add('active');
+            renderApp();
+        }
+
+        function nav(page, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(page).classList.add('active');
+            el.classList.add('active');
+        }
+
+        function renderApp() {
+            const cur = localStorage.getItem('elite_cur') || '$';
+            document.getElementById('main-balance').innerText = `${cur} 0.00`;
+            document.getElementById('active-cur-display').innerText = cur;
+        }
+
+        checkFirstTime();
     </script>
 </body>
 </html>
