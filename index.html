@@ -2,175 +2,169 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro | Final Debugged</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartSpend Tracker</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        * { -webkit-tap-highlight-color: transparent; outline: none; }
-        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; }
-        
-        /* Dark Mode High-Contrast Fixes */
-        .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
-        .dark .ui-card { background: #1e293b !important; border-color: #334155 !important; }
-        .dark .nav-bar { background: #1e293b !important; border-top: 1px solid #334155 !important; }
-        .dark input, .dark select { color: #f1f5f9 !important; background-color: #0f172a !important; }
+        :root {
+            --primary: #6366f1;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card: #ffffff;
+        }
 
-        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2rem; transition: all 0.3s ease; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; height: 90px; z-index: 50; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 800px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 20px; }
         
-        .btn-press:active { transform: scale(0.95); opacity: 0.8; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-up { animation: slideUp 0.4s ease-out forwards; }
+        /* Features Index Sidebar */
+        .features-index { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); height: fit-content; }
+        .features-index h3 { margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        .feature-tag { display: inline-block; background: #e2e8f0; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; margin: 4px 2px; }
+
+        /* Main App Style */
+        .main-app { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .balance-card { text-align: center; margin-bottom: 30px; }
+        .stats { display: flex; justify-content: space-around; background: var(--bg); padding: 15px; border-radius: 8px; }
+        
+        .form-group { margin: 15px 0; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+
+        .list-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .income { border-left: 4px solid var(--success); }
+        .expense { border-left: 4px solid var(--danger); }
+        .delete-btn { color: var(--danger); cursor: pointer; font-weight: bold; border: none; background: none; }
+
+        @media (max-width: 600px) { .container { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body class="bg-[#f8fafc] text-[#1e293b]">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+<div class="container">
+    <div class="main-app">
+        <h2>SmartSpend 2026</h2>
+        
+        <div class="balance-card">
+            <small>YOUR BALANCE</small>
+            <h1 id="balance">$0.00</h1>
+        </div>
 
-        const Icon = ({ name, size = 20, className = "" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        <div class="stats">
+            <div>
+                <small>INCOME</small>
+                <div id="inc-amt" style="color: var(--success); font-weight: bold;">$0.00</div>
+            </div>
+            <div>
+                <small>EXPENSE</small>
+                <div id="exp-amt" style="color: var(--danger); font-weight: bold;">$0.00</div>
+            </div>
+        </div>
+
+        <h3>Add Transaction</h3>
+        <form id="form">
+            <div class="form-group">
+                <input type="text" id="text" placeholder="What did you buy/earn?" required>
+            </div>
+            <div class="form-group">
+                <input type="number" id="amount" placeholder="Amount (e.g., -50 for coffee, 200 for salary)" required>
+            </div>
+            <button type="submit">Add Transaction</button>
+        </form>
+
+        <h3>History</h3>
+        <div id="list">
+            </div>
+    </div>
+
+    <aside class="features-index">
+        <h3>🚀 Feature Index</h3>
+        <div>
+            <span class="feature-tag">Local Storage</span>
+            <span class="feature-tag">Real-time Balance</span>
+            <span class="feature-tag">Auto-Coloring</span>
+            <span class="feature-tag">Mobile Responsive</span>
+            <span class="feature-tag">CRUD Operations</span>
+            <span class="feature-tag">Negative=Expense Logic</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #64748b; margin-top: 15px;">
+            This tracker automatically calculates your net worth based on positive (income) and negative (expense) entries.
+        </p>
+    </aside>
+</div>
+
+<script>
+    const balance = document.getElementById('balance');
+    const money_plus = document.getElementById('inc-amt');
+    const money_minus = document.getElementById('exp-amt');
+    const list = document.getElementById('list');
+    const form = document.getElementById('form');
+    const text = document.getElementById('text');
+    const amount = document.getElementById('amount');
+
+    const localStorageTransactions = JSON.parse(localStorage.getItem('transactions'));
+    let transactions = localStorage.getItem('transactions') !== null ? localStorageTransactions : [];
+
+    function addTransaction(e) {
+        e.preventDefault();
+        const transaction = {
+            id: Math.floor(Math.random() * 100000000),
+            text: text.value,
+            amount: +amount.value
         };
+        transactions.push(transaction);
+        addTransactionDOM(transaction);
+        updateValues();
+        updateLocalStorage();
+        text.value = '';
+        amount.value = '';
+    }
 
-        const CATS = {
-            INCOME: [{ id: 'i1', n: 'Salary', i: 'banknote' }, { id: 'i2', n: 'Freelance', i: 'laptop' }],
-            EXPENSE: [{ id: 'e1', n: 'Food', i: 'utensils' }, { id: 'e2', n: 'Rent', i: 'home' }, { id: 'e3', n: 'Transport', i: 'car' }]
-        };
+    function addTransactionDOM(transaction) {
+        const sign = transaction.amount < 0 ? '-' : '+';
+        const item = document.createElement('div');
+        item.classList.add('list-item');
+        item.classList.add(transaction.amount < 0 ? 'expense' : 'income');
 
-        function App() {
-            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_logs')) || []);
-            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
-            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
-            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_goal')) || 50000);
-            const [tab, setTab] = useState('dashboard');
-            const [modal, setModal] = useState(false);
+        item.innerHTML = `
+            <span>${transaction.text}</span>
+            <span>${sign}$${Math.abs(transaction.amount)} 
+                <button class="delete-btn" onclick="removeTransaction(${transaction.id})">x</button>
+            </span>
+        `;
+        list.appendChild(item);
+    }
 
-            const [type, setType] = useState('EXPENSE');
-            const [cat, setCat] = useState(CATS.EXPENSE[0]);
-            const [amt, setAmt] = useState('');
+    function updateValues() {
+        const amounts = transactions.map(t => t.amount);
+        const total = amounts.reduce((acc, item) => (acc += item), 0).toFixed(2);
+        const income = amounts.filter(item => item > 0).reduce((acc, item) => (acc += item), 0).toFixed(2);
+        const expense = (amounts.filter(item => item < 0).reduce((acc, item) => (acc += item), 0) * -1).toFixed(2);
 
-            useEffect(() => {
-                localStorage.setItem('ft_logs', JSON.stringify(logs));
-                localStorage.setItem('ft_dark', darkMode);
-                localStorage.setItem('ft_cur', currency);
-                localStorage.setItem('ft_goal', goal);
-                document.documentElement.classList.toggle('dark', darkMode);
-            }, [logs, darkMode, currency, goal]);
+        balance.innerText = `$${total}`;
+        money_plus.innerText = `+$${income}`;
+        money_minus.innerText = `-$${expense}`;
+    }
 
-            const analytics = useMemo(() => {
-                const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + b.amt, 0);
-                const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + b.amt, 0);
-                return { bal: inc - exp, inc, exp };
-            }, [logs]);
+    function removeTransaction(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        updateLocalStorage();
+        init();
+    }
 
-            const handleSave = () => {
-                if (!amt || amt <= 0) return;
-                const entry = { id: Date.now(), amt: parseFloat(amt), type, cat, date: new Date().toLocaleDateString() };
-                setLogs([entry, ...logs]);
-                setModal(false);
-                setAmt('');
-            };
+    function updateLocalStorage() {
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
 
-            return (
-                <div className="min-h-screen max-w-md mx-auto pb-32 relative">
-                    <header className="p-8 flex justify-between items-center">
-                        <div>
-                            <h1 className="text-3xl font-black text-blue-600 italic tracking-tighter uppercase">FINTRACK</h1>
-                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">AALIAN EDITION</p>
-                        </div>
-                        <select value={currency} onChange={(e)=>setCurrency(e.target.value)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl text-xs font-bold outline-none border-none">
-                            {['AED', 'USD', 'PKR', 'INR'].map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </header>
+    function init() {
+        list.innerHTML = '';
+        transactions.forEach(addTransactionDOM);
+        updateValues();
+    }
 
-                    <main className="px-6 space-y-6">
-                        {tab === 'dashboard' && (
-                            <div className="space-y-6 animate-up">
-                                <div className="ui-card p-8 text-center bg-gradient-to-br from-blue-600 to-blue-700 text-white border-none shadow-xl">
-                                    <p className="text-[10px] font-bold opacity-60 uppercase mb-1">Available Balance</p>
-                                    <h2 className="text-4xl font-black">{currency} {analytics.bal.toLocaleString()}</h2>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="ui-card p-6 border-emerald-100 dark:border-emerald-500/20">
-                                        <p className="text-[10px] font-bold text-emerald-500 uppercase">Inflow</p>
-                                        <h3 className="text-xl font-black text-emerald-500">{currency} {analytics.inc}</h3>
-                                    </div>
-                                    <div className="ui-card p-6 border-rose-100 dark:border-rose-500/20">
-                                        <p className="text-[10px] font-bold text-rose-500 uppercase">Outflow</p>
-                                        <h3 className="text-xl font-black text-rose-500">{currency} {analytics.exp}</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+    init();
+    form.addEventListener('submit', addTransaction);
+</script>
 
-                        {tab === 'analytics' && (
-                            <div className="space-y-6 animate-up">
-                                <div className="ui-card p-8 text-center">
-                                    <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-4">Saving Goal Progress</p>
-                                    <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
-                                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{width: `${Math.min((analytics.inc/goal)*100, 100)}%`}}></div>
-                                    </div>
-                                    <p className="text-[10px] font-bold opacity-40">TARGET: {currency} {goal}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {tab === 'setup' && (
-                            <div className="ui-card p-6 space-y-6 animate-up">
-                                <div className="space-y-4">
-                                    <button onClick={() => setDarkMode(!darkMode)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold btn-press">
-                                        {darkMode ? 'Switch to Light' : 'Switch to Dark'} <Icon name={darkMode ? 'sun' : 'moon'} />
-                                    </button>
-                                    <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl">
-                                        <p className="text-[10px] font-bold opacity-40 uppercase mb-2">Monthly Saving Goal</p>
-                                        <input type="number" value={goal} onChange={(e)=>setGoal(e.target.value)} className="w-full bg-transparent font-black text-2xl outline-none" />
-                                    </div>
-                                    <a href="mailto:support@fintrackpro.com" className="w-full flex justify-between items-center p-5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-3xl font-bold btn-press">
-                                        Support & Feedback <Icon name="mail" />
-                                    </a>
-                                </div>
-                                <button onClick={() => confirm("Reset all?") && setLogs([])} className="w-full py-4 text-rose-500 font-bold text-xs uppercase tracking-widest opacity-40">Reset Application</button>
-                            </div>
-                        )}
-                    </main>
-
-                    <button onClick={() => setModal(true)} className="fixed bottom-32 right-8 w-16 h-16 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center shadow-2xl z-40 btn-press">
-                        <Icon name="plus" size={32} />
-                    </button>
-
-                    {modal && (
-                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col bg-white dark:bg-[#0f172a] animate-up`}>
-                            <div className="flex justify-between items-center mb-10">
-                                <h2 className="text-xl font-black uppercase italic">Add Transaction</h2>
-                                <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={32}/></button>
-                            </div>
-                            <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-[2rem] mb-10">
-                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-[1.5rem] font-black text-xs uppercase transition-all ${type==='INCOME'?'bg-blue-600 text-white':'opacity-40'}`}>Income</button>
-                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-[1.5rem] font-black text-xs uppercase transition-all ${type==='EXPENSE'?'bg-blue-600 text-white':'opacity-40'}`}>Expense</button>
-                            </div>
-                            <input type="number" value={amt} onChange={(e)=>setAmt(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full mb-auto outline-none" autoFocus />
-                            <button onClick={handleSave} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-black text-xl shadow-2xl btn-press uppercase tracking-widest">Confirm</button>
-                        </div>
-                    )}
-
-                    <nav className="nav-bar flex justify-around items-center px-10 pb-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='dashboard'?'text-blue-600':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
-                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='analytics'?'text-blue-600':'opacity-20'}`}><Icon name="activity"/><span className="text-[9px] font-black uppercase">Stats</span></button>
-                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
-                    </nav>
-                </div>
-            );
-        }
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
 </body>
 </html>
