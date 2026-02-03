@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack - Pro</title>
+    <title>FinTrack - Professional</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { transition: background-color 0.3s; margin: 0; font-family: sans-serif; overflow-x: hidden; }
-        .nav-blur { backdrop-filter: blur(20px); background: rgba(15, 23, 42, 0.8); }
+        body { transition: background-color 0.3s; margin: 0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .nav-blur { backdrop-filter: blur(20px); background: rgba(15, 23, 42, 0.9); border-top: 1px solid rgba(255,255,255,0.1); }
         .glass-card { border: 1px solid rgba(156, 163, 175, 0.15); border-radius: 1.5rem; }
-        .active-tab { color: #3b82f6; }
+        .active-tab { color: #3b82f6; border-top: 2px solid #3b82f6; }
     </style>
 </head>
 <body>
@@ -23,14 +23,15 @@
         const { useState, useEffect } = React;
 
         function App() {
-            const [tab, setTab] = useState('home'); // 'home', 'export', 'settings'
+            const [tab, setTab] = useState('dashboard'); // 'dashboard', 'add', 'settings'
             const [transactions, setTransactions] = useState(() => {
                 const saved = localStorage.getItem('fintrack_logs');
                 return saved ? JSON.parse(saved) : [];
             });
             const [currency, setCurrency] = useState(() => localStorage.getItem('fintrack_curr') || 'Rs');
             const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('fintrack_theme') !== 'false');
-            const [showAdd, setShowAdd] = useState(false);
+            
+            // Add Page States
             const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
 
@@ -45,106 +46,132 @@
             const exportPDF = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                doc.text("FINTRACK STATEMENT", 20, 20);
-                let y = 40;
+                doc.setFontSize(20);
+                doc.text("FINTRACK FINANCIAL REPORT", 20, 20);
+                doc.setFontSize(12);
+                doc.text(`Balance: ${currency} ${total}`, 20, 30);
+                let y = 50;
                 transactions.forEach(t => {
-                    doc.text(`${t.date} - ${t.type}: ${currency} ${t.amount}`, 20, y);
+                    doc.text(`${t.date} | ${t.type}: ${currency} ${t.amount}`, 20, y);
                     y += 10;
                 });
                 doc.save("FinTrack_Report.pdf");
+            };
+
+            const handleAdd = () => {
+                if(!amount) return alert("Please enter amount");
+                const entry = { id: Date.now(), amount, type, date: new Date().toLocaleDateString() };
+                setTransactions([entry, ...transactions]);
+                setAmount('');
+                setTab('dashboard'); // Redirect to dashboard
             };
 
             const themeClass = isDarkMode ? "bg-black text-white" : "bg-slate-50 text-slate-900";
             const cardClass = isDarkMode ? "bg-slate-900/50" : "bg-white shadow-sm";
 
             return (
-                <div className={`min-h-screen pb-32 transition-all ${themeClass}`}>
+                <div className={`min-h-screen pb-24 transition-all ${themeClass}`}>
                     
-                    {/* TOP HEADER */}
-                    <div className="p-6 flex justify-between items-center">
-                        <h1 className="text-xl font-black tracking-tighter text-blue-600">FINTRACK</h1>
-                        <div className="text-[10px] font-bold opacity-50 uppercase tracking-widest">{tab}</div>
+                    {/* Header */}
+                    <div className="p-6 flex justify-between items-center border-b border-slate-800/50">
+                        <h1 className="text-xl font-black tracking-tighter text-blue-500 uppercase italic">FinTrack</h1>
+                        <div className="text-[10px] font-bold opacity-50 tracking-widest uppercase">{tab}</div>
                     </div>
 
-                    {/* MAIN CONTENT AREA */}
                     <div className="p-6">
-                        {tab === 'home' && (
+                        {/* 1. DASHBOARD PAGE */}
+                        {tab === 'dashboard' && (
                             <div className="animate-fadeIn">
-                                <div className={`glass-card p-10 text-center mb-8 ${cardClass}`}>
-                                    <p className="text-[10px] uppercase font-bold opacity-40 mb-2">Net Balance</p>
-                                    <h2 className="text-5xl font-black">{currency} {total.toLocaleString()}</h2>
+                                <div className={`glass-card p-10 text-center mb-10 ${cardClass}`}>
+                                    <p className="text-[10px] font-bold opacity-40 mb-2 uppercase tracking-widest">Total Net Worth</p>
+                                    <h2 className={`text-5xl font-black ${total < 0 ? 'text-red-500' : ''}`}>
+                                        <span className="text-sm opacity-50 mr-2">{currency}</span>
+                                        {total.toLocaleString()}
+                                    </h2>
                                 </div>
                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-bold opacity-40 uppercase">Recent Transactions</p>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Log History</p>
+                                    {transactions.length === 0 && <p className="text-center opacity-20 py-10">No Transactions</p>}
                                     {transactions.map(t => (
-                                        <div key={t.id} className={`glass-card p-4 flex justify-between ${cardClass}`}>
-                                            <span className="font-bold">{t.type}</span>
-                                            <span className={t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}>{currency} {t.amount}</span>
+                                        <div key={t.id} className={`glass-card p-5 flex justify-between items-center ${cardClass}`}>
+                                            <div>
+                                                <p className="text-[10px] opacity-40">{t.date}</p>
+                                                <p className="font-bold text-sm tracking-wide">{t.type}</p>
+                                            </div>
+                                            <span className={`font-black text-lg ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>
+                                                {t.type === 'INCOME' ? '+' : '-'} {t.amount}
+                                            </span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        {tab === 'export' && (
-                            <div className="text-center py-10 animate-fadeIn">
-                                <div className={`glass-card p-8 ${cardClass}`}>
-                                    <div className="text-5xl mb-4 text-green-500">📄</div>
-                                    <h3 className="text-xl font-bold mb-2">Export Data</h3>
-                                    <p className="text-sm opacity-60 mb-8">Download your financial statement in PDF format.</p>
-                                    <button onClick={exportPDF} className="w-full bg-green-600 text-white py-4 rounded-2xl font-black">DOWNLOAD PDF</button>
+                        {/* 2. ADD TRANSACTION PAGE */}
+                        {tab === 'add' && (
+                            <div className="animate-fadeIn py-10">
+                                <h2 className="text-2xl font-black text-center mb-10">LOG NEW DATA</h2>
+                                <div className="flex gap-4 mb-10">
+                                    <button onClick={() => setType('INCOME')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type === 'INCOME' ? 'bg-green-600 shadow-lg' : 'bg-slate-800 opacity-40'}`}>INCOME</button>
+                                    <button onClick={() => setType('EXPENSE')} className={`flex-1 py-4 rounded-2xl font-black transition-all ${type === 'EXPENSE' ? 'bg-red-600 shadow-lg' : 'bg-slate-800 opacity-40'}`}>EXPENSE</button>
                                 </div>
+                                <div className="text-center mb-16">
+                                    <p className="text-xs opacity-40 mb-2">AMOUNT ({currency})</p>
+                                    <input 
+                                        type="number" 
+                                        placeholder="0" 
+                                        className="bg-transparent border-b-2 border-blue-600 text-7xl w-full py-4 outline-none text-center font-black"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                                <button onClick={handleAdd} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl shadow-xl active:scale-95 transition-all">CONFIRM ENTRY</button>
                             </div>
                         )}
 
+                        {/* 3. SETTINGS PAGE (With Export) */}
                         {tab === 'settings' && (
                             <div className="space-y-6 animate-fadeIn">
                                 <div className={`glass-card p-6 ${cardClass}`}>
-                                    <p className="text-[10px] font-bold mb-4 opacity-40">CURRENCY</p>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <p className="text-[10px] font-bold mb-4 opacity-40 tracking-widest uppercase">Select Currency</p>
+                                    <div className="grid grid-cols-2 gap-3">
                                         {['Rs', '$', 'AED', '£'].map(c => (
-                                            <button key={c} onClick={() => setCurrency(c)} className={`py-3 rounded-xl border ${currency === c ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-slate-700'}`}>{c}</button>
+                                            <button key={c} onClick={() => setCurrency(c)} className={`py-4 rounded-xl border font-bold ${currency === c ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-slate-700 opacity-60'}`}>{c}</button>
                                         ))}
                                     </div>
                                 </div>
-                                <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-full py-4 glass-card font-bold">
-                                    {isDarkMode ? '🌞 Light Mode' : '🌙 Dark Mode'}
+                                
+                                <div className={`glass-card p-6 ${cardClass}`}>
+                                    <p className="text-[10px] font-bold mb-4 opacity-40 tracking-widest uppercase">Data & Backup</p>
+                                    <button onClick={exportPDF} className="w-full py-5 bg-green-600/20 text-green-500 border border-green-600/30 rounded-2xl font-black flex items-center justify-center gap-3">
+                                        <span>📥</span> EXPORT PDF REPORT
+                                    </button>
+                                </div>
+
+                                <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-full py-5 glass-card font-black tracking-widest uppercase text-xs">
+                                    {isDarkMode ? '🌞 Switch to Light Mode' : '🌙 Switch to Dark Mode'}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    {/* ADD BUTTON (Floating) */}
-                    <button onClick={() => setShowAdd(true)} className="fixed bottom-24 right-6 w-14 h-14 bg-blue-600 text-white rounded-full text-3xl shadow-xl z-50">+</button>
-
                     {/* BOTTOM NAVIGATION (YouTube Style) */}
-                    <div className="fixed bottom-0 left-0 right-0 h-20 nav-blur border-t border-slate-800 flex justify-around items-center z-50">
-                        <button onClick={() => setTab('home')} className={`flex flex-col items-center ${tab === 'home' ? 'active-tab' : 'opacity-40'}`}>
-                            <span className="text-xl">🏠</span>
-                            <span className="text-[10px] font-bold mt-1">Home</span>
+                    <div className="fixed bottom-0 left-0 right-0 h-20 nav-blur flex justify-around items-center z-50">
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 py-2 ${tab === 'dashboard' ? 'active-tab' : 'opacity-40'}`}>
+                            <span className="text-xl">📊</span>
+                            <span className="text-[10px] font-bold mt-1">Dashboard</span>
                         </button>
-                        <button onClick={() => setTab('export')} className={`flex flex-col items-center ${tab === 'export' ? 'active-tab' : 'opacity-40'}`}>
-                            <span className="text-xl">📥</span>
-                            <span className="text-[10px] font-bold mt-1">Export</span>
+                        <button onClick={() => setTab('add')} className={`flex flex-col items-center flex-1 py-2 ${tab === 'add' ? 'active-tab' : 'opacity-40'}`}>
+                            <span className="text-xl">➕</span>
+                            <span className="text-[10px] font-bold mt-1">Add Log</span>
                         </button>
-                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center ${tab === 'settings' ? 'active-tab' : 'opacity-40'}`}>
+                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 py-2 ${tab === 'settings' ? 'active-tab' : 'opacity-40'}`}>
                             <span className="text-xl">⚙️</span>
                             <span className="text-[10px] font-bold mt-1">Settings</span>
                         </button>
                     </div>
 
-                    {/* ADD MODAL */}
-                    {showAdd && (
-                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col justify-center ${themeClass}`}>
-                            <div className="flex gap-4 mb-6">
-                                <button onClick={() => setType('INCOME')} className={`flex-1 py-4 rounded-2xl font-bold ${type === 'INCOME' ? 'bg-green-600' : 'bg-slate-800'}`}>INCOME</button>
-                                <button onClick={() => setType('EXPENSE')} className={`flex-1 py-4 rounded-2xl font-bold ${type === 'EXPENSE' ? 'bg-red-600' : 'bg-slate-800'}`}>EXPENSE</button>
-                            </div>
-                            <input type="number" placeholder="0" className="bg-transparent border-b-2 border-blue-600 text-6xl w-full py-4 outline-none text-center font-black" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
-                            <button onClick={() => { if(amount){ setTransactions([{id:Date.now(),amount,type,date:new Date().toLocaleDateString()}, ...transactions]); setAmount(''); setShowAdd(false); }}} className="w-full bg-blue-600 py-5 rounded-2xl font-black mt-10">CONFIRM</button>
-                            <button onClick={() => setShowAdd(false)} className="mt-6 opacity-50">CANCEL</button>
-                        </div>
-                    )}
                 </div>
             );
         }
