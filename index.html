@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro | Debugged Master</title>
+    <title>FinTrack Pro | Final Debugged</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -12,22 +12,21 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; margin: 0; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; }
+        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; }
         
-        /* Dark Mode Precision */
+        /* Dark Mode High-Contrast Fixes */
         .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
         .dark .ui-card { background: #1e293b !important; border-color: #334155 !important; }
         .dark .nav-bar { background: #1e293b !important; border-top: 1px solid #334155 !important; }
+        .dark input, .dark select { color: #f1f5f9 !important; background-color: #0f172a !important; }
 
-        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2.5rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2rem; transition: all 0.3s ease; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; height: 90px; z-index: 50; }
         
-        /* Haptic Animations */
-        .btn-press:active { transform: scale(0.92); opacity: 0.8; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-animate { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .btn-press:active { transform: scale(0.95); opacity: 0.8; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-up { animation: slideUp 0.4s ease-out forwards; }
     </style>
 </head>
 <body class="bg-[#f8fafc] text-[#1e293b]">
@@ -41,222 +40,131 @@
             return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
-        const CATEGORIES = {
-            INCOME: [
-                { id: 'i1', n: 'Salary', i: 'banknote' }, 
-                { id: 'i2', n: 'Business', i: 'briefcase' }, 
-                { id: 'i3', n: 'Gift', i: 'gift' },
-                { id: 'i4', n: 'Other', i: 'plus-circle' }
-            ],
-            EXPENSE: [
-                { id: 'e1', n: 'Food', i: 'utensils' }, 
-                { id: 'e2', n: 'Fuel', i: 'fuel' }, 
-                { id: 'e3', n: 'Bills', i: 'zap' }, 
-                { id: 'e4', n: 'Home', i: 'home' }, 
-                { id: 'e5', n: 'Shopping', i: 'shopping-bag' }
-            ]
+        const CATS = {
+            INCOME: [{ id: 'i1', n: 'Salary', i: 'banknote' }, { id: 'i2', n: 'Freelance', i: 'laptop' }],
+            EXPENSE: [{ id: 'e1', n: 'Food', i: 'utensils' }, { id: 'e2', n: 'Rent', i: 'home' }, { id: 'e3', n: 'Transport', i: 'car' }]
         };
 
         function App() {
-            // Safe Initial State Load
-            const [logs, setLogs] = useState(() => {
-                try { return JSON.parse(localStorage.getItem('ft_final_v1')) || []; }
-                catch { return []; }
-            });
+            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_logs')) || []);
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
             const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
+            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_goal')) || 50000);
             const [tab, setTab] = useState('dashboard');
-            
             const [modal, setModal] = useState(false);
-            const [showPrivacy, setShowPrivacy] = useState(false);
-            const [entryType, setEntryType] = useState('EXPENSE');
-            const [selectedCat, setSelectedCat] = useState(CATEGORIES.EXPENSE[0]);
-            const [amount, setAmount] = useState('');
 
-            // Synchronization & Debugging Logs
+            const [type, setType] = useState('EXPENSE');
+            const [cat, setCat] = useState(CATS.EXPENSE[0]);
+            const [amt, setAmt] = useState('');
+
             useEffect(() => {
-                localStorage.setItem('ft_final_v1', JSON.stringify(logs));
+                localStorage.setItem('ft_logs', JSON.stringify(logs));
                 localStorage.setItem('ft_dark', darkMode);
                 localStorage.setItem('ft_cur', currency);
+                localStorage.setItem('ft_goal', goal);
                 document.documentElement.classList.toggle('dark', darkMode);
-                if (window.lucide) window.lucide.createIcons();
-            }, [logs, darkMode, currency, tab]);
+            }, [logs, darkMode, currency, goal]);
 
-            // Auto-switch categories on modal open
-            useEffect(() => { 
-                setSelectedCat(CATEGORIES[entryType][0]); 
-            }, [entryType]);
-
-            // High Performance Calculations
-            const stats = useMemo(() => {
+            const analytics = useMemo(() => {
                 const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + b.amt, 0);
                 const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + b.amt, 0);
-                const breakdown = logs.filter(l => l.type === 'EXPENSE').reduce((acc, curr) => {
-                    acc[curr.cat.n] = (acc[curr.cat.n] || 0) + curr.amt;
-                    return acc;
-                }, {});
-                return { balance: inc - exp, income: inc, expense: exp, breakdown };
-            }, [logs, currency]);
+                return { bal: inc - exp, inc, exp };
+            }, [logs]);
 
             const handleSave = () => {
-                const val = parseFloat(amount);
-                if (!val || val <= 0) return;
-                const entry = {
-                    id: Date.now(),
-                    amt: val,
-                    type: entryType,
-                    cat: selectedCat,
-                    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
-                };
+                if (!amt || amt <= 0) return;
+                const entry = { id: Date.now(), amt: parseFloat(amt), type, cat, date: new Date().toLocaleDateString() };
                 setLogs([entry, ...logs]);
                 setModal(false);
-                setAmount('');
+                setAmt('');
             };
 
             return (
-                <div className="min-h-screen max-w-md mx-auto pb-32 relative shadow-2xl bg-[#f8fafc] dark:bg-slate-950 transition-colors">
-                    {/* Header */}
+                <div className="min-h-screen max-w-md mx-auto pb-32 relative">
                     <header className="p-8 flex justify-between items-center">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">FinTrack Pro</span>
-                            <h1 className="text-3xl font-[900] italic tracking-tighter uppercase">{tab}</h1>
+                        <div>
+                            <h1 className="text-3xl font-black text-blue-600 italic tracking-tighter uppercase">FINTRACK</h1>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">AALIAN EDITION</p>
                         </div>
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-4 rounded-[1.5rem] bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 btn-press">
-                            <Icon name={darkMode ? 'sun' : 'moon'} className="text-blue-500" />
-                        </button>
+                        <select value={currency} onChange={(e)=>setCurrency(e.target.value)} className="bg-slate-100 dark:bg-slate-800 p-2 rounded-xl text-xs font-bold outline-none border-none">
+                            {['AED', 'USD', 'PKR', 'INR'].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
                     </header>
 
                     <main className="px-6 space-y-6">
                         {tab === 'dashboard' && (
-                            <div className="space-y-6 animate-ui">
-                                {/* Balance Widget */}
-                                <div className="ui-card p-10 bg-slate-900 dark:bg-blue-600 text-white border-none shadow-2xl shadow-blue-500/20">
-                                    <p className="text-[11px] font-bold opacity-50 uppercase tracking-[0.2em] mb-2 text-center">Net Balance</p>
-                                    <h2 className="text-4xl font-black text-center truncate">{currency} {stats.balance.toLocaleString()}</h2>
-                                    <div className="mt-8 flex justify-between border-t border-white/10 pt-6">
-                                        <div className="text-center">
-                                            <p className="text-[9px] font-black opacity-40 uppercase mb-1">Total Income</p>
-                                            <p className="text-emerald-400 font-black">+{stats.income.toLocaleString()}</p>
-                                        </div>
-                                        <div className="text-center border-l border-white/10 pl-8">
-                                            <p className="text-[9px] font-black opacity-40 uppercase mb-1">Total Expense</p>
-                                            <p className="text-rose-400 font-black">-{stats.expense.toLocaleString()}</p>
-                                        </div>
-                                    </div>
+                            <div className="space-y-6 animate-up">
+                                <div className="ui-card p-8 text-center bg-gradient-to-br from-blue-600 to-blue-700 text-white border-none shadow-xl">
+                                    <p className="text-[10px] font-bold opacity-60 uppercase mb-1">Available Balance</p>
+                                    <h2 className="text-4xl font-black">{currency} {analytics.bal.toLocaleString()}</h2>
                                 </div>
-
-                                {/* Transaction List */}
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center px-1">
-                                        <h3 className="text-[11px] font-black opacity-30 uppercase tracking-widest">Recent Logs</h3>
-                                        <span className="text-[10px] font-bold opacity-30">{logs.length} Total</span>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="ui-card p-6 border-emerald-100 dark:border-emerald-500/20">
+                                        <p className="text-[10px] font-bold text-emerald-500 uppercase">Inflow</p>
+                                        <h3 className="text-xl font-black text-emerald-500">{currency} {analytics.inc}</h3>
                                     </div>
-                                    <div className="space-y-3">
-                                        {logs.slice(0, 15).map(l => (
-                                            <div key={l.id} onDoubleClick={() => confirm("Delete log?") && setLogs(logs.filter(x => x.id !== l.id))} className="ui-card p-5 flex justify-between items-center btn-press">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-12 h-12 rounded-[1.3rem] flex items-center justify-center ${l.type==='INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                        <Icon name={l.cat.i} size={22} />
-                                                    </div>
-                                                    <div><p className="font-black text-sm">{l.cat.n}</p><p className="text-[10px] opacity-40 font-bold">{l.date}</p></div>
-                                                </div>
-                                                <p className={`font-black text-lg ${l.type==='INCOME'?'text-emerald-500':'text-rose-500'}`}>{l.type==='INCOME'?'+':'-'}{l.amt.toLocaleString()}</p>
-                                            </div>
-                                        ))}
+                                    <div className="ui-card p-6 border-rose-100 dark:border-rose-500/20">
+                                        <p className="text-[10px] font-bold text-rose-500 uppercase">Outflow</p>
+                                        <h3 className="text-xl font-black text-rose-500">{currency} {analytics.exp}</h3>
                                     </div>
                                 </div>
                             </div>
                         )}
 
                         {tab === 'analytics' && (
-                            <div className="space-y-6 animate-ui">
-                                <div className="ui-card p-8 space-y-6">
-                                    <h3 className="text-xs font-black uppercase opacity-40 tracking-widest">Spending Profile</h3>
-                                    {Object.entries(stats.breakdown).length === 0 ? <p className="text-center py-10 opacity-20 italic">No expense data</p> : 
-                                        Object.entries(stats.breakdown).map(([name, value]) => (
-                                            <div key={name} className="space-y-2">
-                                                <div className="flex justify-between text-[11px] font-black">
-                                                    <span className="opacity-50 uppercase">{name}</span>
-                                                    <span>{currency} {value.toLocaleString()}</span>
-                                                </div>
-                                                <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-blue-600 rounded-full transition-all duration-1000" style={{width: `${Math.min((value/stats.expense)*100, 100)}%`}}></div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    }
+                            <div className="space-y-6 animate-up">
+                                <div className="ui-card p-8 text-center">
+                                    <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-4">Saving Goal Progress</p>
+                                    <div className="h-4 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-2">
+                                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{width: `${Math.min((analytics.inc/goal)*100, 100)}%`}}></div>
+                                    </div>
+                                    <p className="text-[10px] font-bold opacity-40">TARGET: {currency} {goal}</p>
                                 </div>
                             </div>
                         )}
 
                         {tab === 'setup' && (
-                            <div className="ui-card p-8 space-y-6 animate-ui">
+                            <div className="ui-card p-6 space-y-6 animate-up">
                                 <div className="space-y-4">
-                                    <p className="text-[11px] font-black opacity-30 uppercase tracking-widest">Currency Preference</p>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {['AED', 'USD', 'PKR', 'INR'].map(c => (
-                                            <button key={c} onClick={()=>setCurrency(c)} className={`py-4 rounded-2xl font-black text-xs transition-all ${currency===c?'bg-blue-600 text-white shadow-lg shadow-blue-500/30':'bg-slate-50 dark:bg-slate-900 opacity-40'}`}>{c}</button>
-                                        ))}
+                                    <button onClick={() => setDarkMode(!darkMode)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold btn-press">
+                                        {darkMode ? 'Switch to Light' : 'Switch to Dark'} <Icon name={darkMode ? 'sun' : 'moon'} />
+                                    </button>
+                                    <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl">
+                                        <p className="text-[10px] font-bold opacity-40 uppercase mb-2">Monthly Saving Goal</p>
+                                        <input type="number" value={goal} onChange={(e)=>setGoal(e.target.value)} className="w-full bg-transparent font-black text-2xl outline-none" />
                                     </div>
+                                    <a href="mailto:support@fintrackpro.com" className="w-full flex justify-between items-center p-5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-3xl font-bold btn-press">
+                                        Support & Feedback <Icon name="mail" />
+                                    </a>
                                 </div>
-                                <div className="pt-6 border-t dark:border-slate-800 space-y-3">
-                                    <button onClick={() => setShowPrivacy(true)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">Privacy Policy <Icon name="shield-check" className="text-blue-600"/></button>
-                                    <a href="mailto:support@fintrackpro.com" className="w-full flex justify-between items-center p-5 bg-blue-600/5 text-blue-600 rounded-3xl font-bold text-sm btn-press">Support Center <Icon name="mail" /></a>
-                                    <button onClick={() => confirm("Wipe all data?") && setLogs([])} className="w-full py-4 text-rose-500 font-black text-[10px] uppercase tracking-[0.4em] opacity-40">System Reset</button>
-                                </div>
+                                <button onClick={() => confirm("Reset all?") && setLogs([])} className="w-full py-4 text-rose-500 font-bold text-xs uppercase tracking-widest opacity-40">Reset Application</button>
                             </div>
                         )}
                     </main>
 
-                    {/* Fixed Action FABs */}
-                    <div className="fixed bottom-28 right-8 flex flex-col gap-4 z-40">
-                        <button onClick={() => { setEntryType('INCOME'); setModal(true); }} className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-xl btn-press">
-                            <Icon name="plus" size={24}/>
-                        </button>
-                        <button onClick={() => { setEntryType('EXPENSE'); setModal(true); }} className="w-16 h-16 bg-rose-500 text-white rounded-[2.2rem] flex items-center justify-center shadow-2xl btn-press">
-                            <Icon name="minus" size={32}/>
-                        </button>
-                    </div>
+                    <button onClick={() => setModal(true)} className="fixed bottom-32 right-8 w-16 h-16 bg-blue-600 text-white rounded-[2rem] flex items-center justify-center shadow-2xl z-40 btn-press">
+                        <Icon name="plus" size={32} />
+                    </button>
 
-                    {/* Entry Modal Overlay */}
                     {modal && (
-                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col modal-animate ${darkMode ? 'bg-slate-950' : 'bg-white'}`}>
+                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col bg-white dark:bg-[#0f172a] animate-up`}>
                             <div className="flex justify-between items-center mb-10">
-                                <h2 className={`text-2xl font-black italic uppercase ${entryType==='INCOME'?'text-emerald-500':'text-rose-500'}`}>Log {entryType}</h2>
-                                <button onClick={() => setModal(false)} className="p-2 opacity-20"><Icon name="x" size={32}/></button>
+                                <h2 className="text-xl font-black uppercase italic">Add Transaction</h2>
+                                <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={32}/></button>
                             </div>
-                            
-                            <div className="grid grid-cols-4 gap-3 mb-12">
-                                {CATEGORIES[entryType].map(c => (
-                                    <button key={c.id} onClick={()=>setSelectedCat(c)} className={`p-5 rounded-[2rem] border-2 flex flex-col items-center gap-2 transition-all ${selectedCat.id===c.id?'border-blue-600 bg-blue-600/10 text-blue-600':'border-transparent bg-slate-50 dark:bg-slate-800 opacity-30'}`}><Icon name={c.i} size={20}/><span className="text-[8px] font-black uppercase">{c.n}</span></button>
-                                ))}
+                            <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-[2rem] mb-10">
+                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-[1.5rem] font-black text-xs uppercase transition-all ${type==='INCOME'?'bg-blue-600 text-white':'opacity-40'}`}>Income</button>
+                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-[1.5rem] font-black text-xs uppercase transition-all ${type==='EXPENSE'?'bg-blue-600 text-white':'opacity-40'}`}>Expense</button>
                             </div>
-
-                            <div className="flex-1 flex flex-col justify-center items-center">
-                                <input type="number" inputMode="decimal" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full outline-none caret-blue-600" autoFocus />
-                                <p className="text-sm font-black opacity-20 mt-6 tracking-[0.8em]">{currency}</p>
-                            </div>
-
-                            <button onClick={handleSave} className={`w-full py-7 rounded-[2.5rem] font-black text-xl shadow-2xl btn-press uppercase text-white mb-6 ${entryType==='INCOME'?'bg-emerald-500 shadow-emerald-500/20':'bg-rose-500 shadow-rose-500/20'}`}>Confirm Entry</button>
+                            <input type="number" value={amt} onChange={(e)=>setAmt(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full mb-auto outline-none" autoFocus />
+                            <button onClick={handleSave} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-black text-xl shadow-2xl btn-press uppercase tracking-widest">Confirm</button>
                         </div>
                     )}
 
-                    {/* Privacy Modal */}
-                    {showPrivacy && (
-                        <div className="fixed inset-0 z-[110] bg-black/70 backdrop-blur-md p-6 flex items-end">
-                            <div className={`w-full p-10 rounded-[3.5rem] modal-animate ${darkMode?'bg-slate-900':'bg-white'}`}>
-                                <h2 className="text-2xl font-black mb-6 italic">Privacy Shield</h2>
-                                <p className="text-sm opacity-60 font-bold leading-relaxed mb-10 uppercase tracking-tighter">Your data is stored locally on this hardware. No cloud sync, no tracking, total control.</p>
-                                <button onClick={()=>setShowPrivacy(false)} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase btn-press">Got it</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Bottom Nav */}
-                    <nav className="nav-bar flex justify-around items-center px-10 pb-4">
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='dashboard'?'text-blue-600 opacity-100':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
-                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='analytics'?'text-blue-600 opacity-100':'opacity-20'}`}><Icon name="pie-chart"/><span className="text-[9px] font-black uppercase">Analytics</span></button>
-                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='setup'?'text-blue-600 opacity-100':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
+                    <nav className="nav-bar flex justify-around items-center px-10 pb-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='dashboard'?'text-blue-600':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
+                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='analytics'?'text-blue-600':'opacity-20'}`}><Icon name="activity"/><span className="text-[9px] font-black uppercase">Stats</span></button>
+                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1.5 transition-all ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
                     </nav>
                 </div>
             );
