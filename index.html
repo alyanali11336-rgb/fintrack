@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro - Master Release</title>
+    <title>FinTrack Pro - Multi-Theme</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,31 +11,45 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fredoka:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fredoka:wght@400;700&display=swap');
         
-        body { transition: all 0.3s ease; margin: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
-        .nav-blur { backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); }
-        
-        /* --- THEME LOGIC --- */
-        .theme-toon { font-family: 'Fredoka', sans-serif; background: #0f172a !important; color: #f8fafc !important; }
-        .theme-toon .glass-card { background: #1e293b !important; border: 3px solid #334155 !important; border-bottom: 7px solid #334155 !important; border-radius: 1.5rem; transform: rotate(-0.2deg); }
-        .theme-toon .btn-pop { border-bottom: 5px solid #1e40af !important; transition: all 0.1s; }
-        .theme-toon .btn-pop:active { border-bottom-width: 1px !important; transform: translateY(4px); }
-        
+        body { transition: all 0.2s ease; margin: 0; overflow-x: hidden; }
+
+        /* --- CLASSIC THEME (DEFAULT) --- */
         .theme-classic { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
-        .theme-classic .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        
+        .theme-classic .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .theme-classic .btn-primary { background: #2563eb; color: white; border-radius: 1rem; }
+
+        /* --- COMIC BOOK THEME (SELECTABLE) --- */
+        .theme-comic { font-family: 'Fredoka', sans-serif; background: #0f172a !important; color: #f8fafc !important; }
+        .theme-comic .glass-card { 
+            background: #1e293b !important; 
+            border: 4px solid #ffffff !important; 
+            border-bottom: 8px solid #ffffff !important; 
+            border-radius: 1rem; 
+            transform: rotate(-1deg); 
+            box-shadow: 10px 10px 0px #2563eb;
+        }
+        .theme-comic .btn-primary { 
+            background: #facc15; 
+            color: #000; 
+            border: 3px solid #000; 
+            border-bottom: 6px solid #000; 
+            font-weight: 900;
+            transform: skew(-5deg);
+        }
+        .theme-comic .btn-primary:active { border-bottom-width: 2px; transform: translateY(4px) skew(-5deg); }
+
         .animal-float { animation: float 3s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         
-        .dropdown-content { max-height: 0; overflow: hidden; transition: max-height 0.3s; }
-        .dropdown-open { max-height: 300px; }
+        .nav-blur { backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body>
+<body class="theme-classic">
     <div id="root"></div>
-    <div style="position: fixed; bottom: 0; width: 100%; height: 60px; background: #000; color: #444; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 100; letter-spacing: 2px;">ADVERTISEMENT SLOT</div>
+    <div style="position: fixed; bottom: 0; width: 100%; height: 60px; background: #000; color: #444; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 100;">AD SLOT</div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
@@ -46,21 +60,20 @@
         };
 
         const CATS = {
-            INCOME: [{ id: 'salary', title: 'Salary', icon: 'banknote' }, { id: 'gift', title: 'Gift', icon: 'gift' }, { id: 'other', title: 'Extra', icon: 'plus-circle' }],
-            EXPENSE: [{ id: 'food', title: 'Food', icon: 'utensils' }, { id: 'home', title: 'Home', icon: 'home' }, { id: 'fun', title: 'Fun', icon: 'clapperboard' }, { id: 'health', title: 'Health', icon: 'heart-pulse' }]
+            INCOME: [{ id: 'salary', title: 'Salary', icon: 'banknote' }, { id: 'other', title: 'Gift', icon: 'plus-circle' }],
+            EXPENSE: [{ id: 'food', title: 'Food', icon: 'utensils' }, { id: 'home', title: 'Rent', icon: 'home' }, { id: 'fun', title: 'Fun', icon: 'clapperboard' }]
         };
 
         function App() {
             const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('ft_auth') === 'true');
             const [userName, setUserName] = useState(() => localStorage.getItem('ft_user_name') || '');
+            const [appTheme, setAppTheme] = useState(() => localStorage.getItem('ft_theme') || 'classic');
             const [currency, setCurrency] = useState(() => localStorage.getItem('ft_curr') || 'Rs');
-            const [appTheme, setAppTheme] = useState(() => localStorage.getItem('ft_visual') || 'toon');
             const [incomeGoal, setIncomeGoal] = useState(() => Number(localStorage.getItem('ft_goal')) || 50000);
             const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('ft_logs')) || []);
             
             const [tab, setTab] = useState('dashboard');
             const [showAdd, setShowAdd] = useState(false);
-            const [isCurrOpen, setIsCurrOpen] = useState(false);
             const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
             const [selectedCat, setSelectedCat] = useState(CATS.EXPENSE[0]);
@@ -68,159 +81,129 @@
             useEffect(() => {
                 localStorage.setItem('ft_auth', isLoggedIn);
                 localStorage.setItem('ft_user_name', userName);
+                localStorage.setItem('ft_theme', appTheme);
                 localStorage.setItem('ft_curr', currency);
-                localStorage.setItem('ft_visual', appTheme);
                 localStorage.setItem('ft_goal', incomeGoal);
                 localStorage.setItem('ft_logs', JSON.stringify(transactions));
-            }, [isLoggedIn, userName, currency, appTheme, incomeGoal, transactions]);
+            }, [isLoggedIn, userName, appTheme, currency, incomeGoal, transactions]);
 
             const totalInc = transactions.filter(t => t.type === 'INCOME').reduce((a, b) => a + Number(b.amount), 0);
             const totalExp = transactions.filter(t => t.type === 'EXPENSE').reduce((a, b) => a + Number(b.amount), 0);
             const balance = totalInc - totalExp;
             const progress = Math.min((totalInc / incomeGoal) * 100, 100);
 
-            const getBuddy = () => {
-                if (balance < 0) return { e: "😿", m: "Out of money, buddy!" };
-                if (progress >= 100) return { e: "🦁", m: "Goal Smashed! King!" };
-                if (balance > 10000) return { e: "🐼", m: "We are doing great!" };
-                return { e: "🐱", m: "Keep tracking, I'm here!" };
-            };
-
-            const exportPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.text("FinTrack Pro Report", 20, 20);
-                doc.text(`User: ${userName} | Balance: ${currency}${balance}`, 20, 30);
-                transactions.forEach((t, i) => doc.text(`${t.date}: ${t.type} - ${t.amount}`, 20, 50 + (i*10)));
-                doc.save("Report.pdf");
-            };
+            const buddy = balance < 0 ? { e: "😿", m: "Budget low!" } : (progress >= 100 ? { e: "🦁", m: "Rich!" } : { e: "🐱", m: "Safe!" });
 
             if (!isLoggedIn) {
                 return (
-                    <div className={`min-h-screen flex flex-col justify-center p-8 text-center theme-toon`}>
+                    <div className="min-h-screen flex flex-col justify-center p-8 text-center bg-white theme-classic">
                         <div className="text-8xl mb-4 animal-float">🐱</div>
-                        <h1 className="text-4xl font-black text-blue-500 mb-8">FINTRACK BUDDY</h1>
-                        <input type="text" placeholder="Enter Your Name" className="w-full bg-slate-900 p-5 rounded-2xl border-2 border-slate-700 mb-6 text-center text-white" onChange={(e)=>setUserName(e.target.value)} />
-                        <button onClick={() => userName && setIsLoggedIn(true)} className="bg-blue-600 p-6 rounded-3xl font-black text-white w-full btn-pop">START ADVENTURE</button>
+                        <h1 className="text-4xl font-black text-blue-600 mb-8">FINTRACK</h1>
+                        <input type="text" placeholder="Enter Name" className="w-full bg-slate-100 p-5 rounded-2xl border-2 border-slate-200 mb-6 text-center" onChange={(e)=>setUserName(e.target.value)} />
+                        <button onClick={() => userName && setIsLoggedIn(true)} className="btn-primary p-6 font-black w-full shadow-xl">LOG IN</button>
                     </div>
                 );
             }
 
             return (
                 <div className={`min-h-screen pb-40 transition-all theme-${appTheme}`}>
-                    {/* Header */}
-                    <div className="p-6 flex justify-between items-center border-b border-slate-800/20">
-                        <h1 className="text-xl font-black text-blue-500 italic uppercase tracking-tighter">FinTrack</h1>
-                        <div className="flex items-center gap-2 opacity-60"><Icon name="user" size={16} /><span className="text-xs font-bold">{userName}</span></div>
+                    <div className="p-6 flex justify-between items-center border-b border-slate-200/20">
+                        <h1 className="text-xl font-black text-blue-500 italic">FINTRACK</h1>
+                        <div className="text-xs font-bold opacity-50">{userName}'s Wallet</div>
                     </div>
 
                     <div className="p-6">
-                        {/* 1. DASHBOARD */}
                         {tab === 'dashboard' && (
                             <div className="space-y-6">
-                                <div className="flex items-center gap-4 bg-blue-500/10 p-5 rounded-3xl border-2 border-blue-500/10">
-                                    <div className="text-5xl animal-float">{getBuddy().e}</div>
-                                    <div><p className="text-[10px] font-bold opacity-40 uppercase">My Buddy</p><p className="text-sm font-black text-blue-400">{getBuddy().m}</p></div>
+                                <div className={`glass-card p-5 flex items-center gap-4`}>
+                                    <div className="text-5xl animal-float">{buddy.e}</div>
+                                    <div><p className="text-[10px] font-bold opacity-50">BUDDY</p><p className="font-black text-blue-500">{buddy.m}</p></div>
                                 </div>
                                 <div className="glass-card p-10 text-center">
-                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest mb-1">Total Savings</p>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-1">Balance</p>
                                     <h2 className="text-5xl font-black">{currency} {balance.toLocaleString()}</h2>
                                 </div>
                                 <div className="space-y-3">
-                                    <p className="text-[10px] font-black opacity-30 uppercase ml-2">History</p>
                                     {transactions.map(t => (
                                         <div key={t.id} className="glass-card p-4 flex justify-between items-center">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500"><Icon name={t.category.icon} /></div>
-                                                <div><p className="font-bold text-sm leading-tight">{t.category.title}</p><p className="text-[9px] opacity-40">{t.date}</p></div>
+                                                <div className="p-3 bg-blue-500/10 rounded-xl text-blue-500"><Icon name={t.category.icon} /></div>
+                                                <p className="font-bold text-sm">{t.category.title}</p>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className={`font-black ${t.type==='INCOME'?'text-green-500':'text-red-500'}`}>{t.type==='INCOME'?'+':'-'}{t.amount}</span>
-                                                <button onClick={()=>setTransactions(transactions.filter(i=>i.id!==t.id))} className="opacity-20"><Icon name="trash" size={14}/></button>
-                                            </div>
+                                            <span className={`font-black ${t.type==='INCOME'?'text-green-500':'text-red-500'}`}>{t.amount}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        {/* 2. ANALYTICS */}
                         {tab === 'analytics' && (
                             <div className="space-y-6">
-                                <button onClick={exportPDF} className={`w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 ${appTheme==='toon'?'btn-pop':''}`}><Icon name="file-text" /> EXPORT REPORT</button>
                                 <div className="glass-card p-6">
-                                    <p className="text-xs font-black opacity-40 mb-4">INCOME GOAL ({progress.toFixed(0)}%)</p>
-                                    <div className="w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mb-2">
-                                        <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                                    <p className="text-xs font-black opacity-40 mb-4 uppercase">Goal Tracker</p>
+                                    <div className="w-full h-4 bg-slate-200 rounded-full overflow-hidden mb-2">
+                                        <div className="h-full bg-green-500" style={{ width: `${progress}%` }}></div>
                                     </div>
-                                    <p className="text-[10px] font-bold text-right opacity-40">Target: {currency}{incomeGoal}</p>
+                                    <div className="flex justify-between text-[10px] font-bold opacity-50">
+                                        <span>{progress.toFixed(0)}% Done</span><span>Goal: {currency}{incomeGoal}</span>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="glass-card p-6 border-l-4 border-green-500"><p className="text-[10px] font-bold opacity-30">INCOME</p><p className="text-xl font-black text-green-500">{currency}{totalInc}</p></div>
-                                    <div className="glass-card p-6 border-l-4 border-red-500"><p className="text-[10px] font-bold opacity-30">EXPENSE</p><p className="text-xl font-black text-red-500">{currency}{totalExp}</p></div>
+                                    <div className="glass-card p-5 border-l-4 border-green-500"><p className="text-[10px] opacity-40">INCOME</p><p className="text-xl font-black">{currency}{totalInc}</p></div>
+                                    <div className="glass-card p-5 border-l-4 border-red-500"><p className="text-[10px] opacity-40">EXPENSE</p><p className="text-xl font-black">{currency}{totalExp}</p></div>
                                 </div>
+                                <button onClick={()=>{}} className="btn-primary w-full p-5 font-black flex items-center justify-center gap-2 shadow-lg"><Icon name="download"/> EXPORT PDF</button>
                             </div>
                         )}
 
-                        {/* 3. SETTINGS */}
                         {tab === 'settings' && (
                             <div className="space-y-4">
                                 <div className="glass-card p-6">
-                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-3">App Style</p>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-4">Choose Appearance</p>
                                     <div className="flex gap-2">
-                                        <button onClick={()=>setAppTheme('classic')} className={`flex-1 p-3 rounded-xl font-bold border-2 ${appTheme==='classic'?'border-blue-500 bg-blue-500/10 text-blue-500':'border-slate-800 opacity-40'}`}>Classic</button>
-                                        <button onClick={()=>setAppTheme('toon')} className={`flex-1 p-3 rounded-xl font-bold border-2 ${appTheme==='toon'?'border-blue-500 bg-blue-500/10 text-blue-500':'border-slate-800 opacity-40'}`}>Toon Blue</button>
+                                        <button onClick={()=>setAppTheme('classic')} className={`flex-1 p-4 rounded-xl font-black border-2 ${appTheme==='classic'?'border-blue-500 bg-blue-500/10 text-blue-500':'border-slate-200 opacity-40'}`}>CLASSIC</button>
+                                        <button onClick={()=>setAppTheme('comic')} className={`flex-1 p-4 rounded-xl font-black border-2 ${appTheme==='comic'?'border-yellow-400 bg-yellow-400/10 text-yellow-500':'border-slate-200 opacity-40'}`}>COMIC BOOK</button>
                                     </div>
                                 </div>
                                 <div className="glass-card p-6">
-                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-3">Monthly Goal ({currency})</p>
-                                    <input type="number" className="w-full bg-slate-800/20 p-4 rounded-xl font-bold border-2 border-slate-700 outline-none focus:border-blue-500" value={incomeGoal} onChange={(e)=>setIncomeGoal(e.target.value)} />
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-2">Monthly Goal</p>
+                                    <input type="number" className="w-full bg-slate-100 p-4 rounded-xl font-bold border-2 border-slate-200 outline-none" value={incomeGoal} onChange={(e)=>setIncomeGoal(e.target.value)} />
                                 </div>
-                                <div className="glass-card p-2">
-                                    <div className="border-b border-slate-800/10 p-4 flex justify-between items-center" onClick={()=>setIsCurrOpen(!isCurrOpen)}>
-                                        <span className="font-bold text-sm">Currency ({currency})</span><Icon name="chevron-down" size={16}/>
-                                    </div>
-                                    <div className={`dropdown-content ${isCurrOpen?'dropdown-open':''} px-4`}>
-                                        {['Rs', '$', '€', 'AED'].map(c => (
-                                            <button key={c} onClick={()=>{setCurrency(c); setIsCurrOpen(false)}} className="w-full py-3 text-left opacity-60 font-bold border-b border-slate-800/5">{c}</button>
-                                        ))}
-                                    </div>
-                                    <a href="mailto:fynovostudio@gmail.com?subject=Feedback" className="p-4 flex justify-between items-center border-b border-slate-800/10"><span className="font-bold text-sm">Send Feedback</span><Icon name="message-square" size={16}/></a>
-                                    <button onClick={()=>{localStorage.clear(); window.location.reload()}} className="p-4 w-full flex justify-between items-center text-red-500/60"><span className="font-bold text-sm">Wipe All Data</span><Icon name="refresh-ccw" size={16}/></button>
+                                <div className="glass-card p-2 flex flex-col">
+                                    <a href="mailto:fynovostudio@gmail.com" className="p-4 flex justify-between font-bold text-sm border-b border-slate-100">Feedback <Icon name="mail" size={16}/></a>
+                                    <button onClick={()=>{localStorage.clear(); window.location.reload()}} className="p-4 flex justify-between font-bold text-sm text-red-500 opacity-60">Reset Data <Icon name="trash" size={16}/></button>
                                 </div>
-                                <p className="text-[10px] opacity-20 text-center font-bold">Fynovo Studio • Version 2.0</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Footer Navigation */}
-                    <button onClick={() => setShowAdd(true)} className={`fixed bottom-36 right-6 w-16 h-16 bg-blue-600 text-white rounded-full z-40 flex items-center justify-center shadow-2xl ${appTheme==='toon'?'btn-pop':''}`}><Icon name="plus" size={32} /></button>
-                    <div className="fixed bottom-[60px] left-0 right-0 h-20 nav-blur bg-slate-900/90 flex justify-around items-center z-50">
-                        <button onClick={()=>setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab==='dashboard'?'text-blue-400':'opacity-30'}`}><Icon name="home"/><span className="text-[9px] mt-1 font-bold">BUDDY</span></button>
-                        <button onClick={()=>setTab('analytics')} className={`flex flex-col items-center flex-1 ${tab==='analytics'?'text-blue-400':'opacity-30'}`}><Icon name="bar-chart-2"/><span className="text-[9px] mt-1 font-bold">STATS</span></button>
-                        <button onClick={()=>setTab('settings')} className={`flex flex-col items-center flex-1 ${tab==='settings'?'text-blue-400':'opacity-30'}`}><Icon name="settings"/><span className="text-[9px] mt-1 font-bold">SETUP</span></button>
+                    {/* Navbar */}
+                    <button onClick={() => setShowAdd(true)} className="fixed bottom-36 right-6 w-16 h-16 bg-blue-600 text-white rounded-full z-40 flex items-center justify-center shadow-2xl btn-primary"><Icon name="plus" size={32} /></button>
+                    <div className="fixed bottom-[60px] left-0 right-0 h-20 nav-blur bg-white/90 flex justify-around items-center z-50">
+                        <button onClick={()=>setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab==='dashboard'?'text-blue-500':'opacity-30'}`}><Icon name="grid"/><span className="text-[9px] mt-1 font-bold uppercase">Home</span></button>
+                        <button onClick={()=>setTab('analytics')} className={`flex flex-col items-center flex-1 ${tab==='analytics'?'text-blue-500':'opacity-30'}`}><Icon name="bar-chart"/><span className="text-[9px] mt-1 font-bold uppercase">Stats</span></button>
+                        <button onClick={()=>setTab('settings')} className={`flex flex-col items-center flex-1 ${tab==='settings'?'text-blue-500':'opacity-30'}`}><Icon name="settings"/><span className="text-[9px] mt-1 font-bold uppercase">Config</span></button>
                     </div>
 
-                    {/* Add Transaction Page */}
                     {showAdd && (
-                        <div className={`fixed inset-0 z-[110] p-6 flex flex-col theme-toon bg-slate-950`}>
-                            <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-2xl border-2 border-slate-800">
+                        <div className={`fixed inset-0 z-[110] p-6 flex flex-col bg-white theme-${appTheme}`}>
+                            <div className="flex gap-2 mb-8 bg-slate-100 p-1 rounded-2xl">
                                 <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold ${type==='INCOME'?'bg-green-600 text-white':'opacity-40'}`}>INCOME</button>
                                 <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold ${type==='EXPENSE'?'bg-red-600 text-white':'opacity-40'}`}>EXPENSE</button>
                             </div>
                             <div className="grid grid-cols-3 gap-3 mb-10">
                                 {CATS[type].map(c => (
-                                    <button key={c.id} onClick={()=>setSelectedCat(c)} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 ${selectedCat.id===c.id?'border-blue-500 bg-blue-500/10 text-blue-400':'border-slate-800 opacity-40'}`}><Icon name={c.icon}/><span className="text-[10px] font-bold">{c.title}</span></button>
+                                    <button key={c.id} onClick={()=>setSelectedCat(c)} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 ${selectedCat.id===c.id?'border-blue-500 bg-blue-500/10 text-blue-500':'border-slate-100 opacity-40'}`}><Icon name={c.icon}/><span className="text-[10px] font-bold">{c.title}</span></button>
                                 ))}
                             </div>
-                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-6xl w-full py-4 outline-none text-center font-black mb-10 text-white" value={amount} onChange={(e)=>setAmount(e.target.value)} autoFocus />
+                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-6xl w-full py-4 outline-none text-center font-black mb-10" value={amount} onChange={(e)=>setAmount(e.target.value)} autoFocus />
                             <button onClick={()=>{
                                 if(!amount) return;
                                 const date = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
                                 setTransactions([{id:Date.now(), amount, type, category:selectedCat, date}, ...transactions]);
                                 setShowAdd(false); setAmount('');
-                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 btn-pop">ADD RECORD</button>
-                            <button onClick={()=>setShowAdd(false)} className="opacity-40 font-bold text-xs text-center w-full">GO BACK</button>
+                            }} className="btn-primary w-full py-6 font-black text-xl mb-4 shadow-xl">ADD NOW</button>
+                            <button onClick={()=>setShowAdd(false)} className="opacity-40 font-bold text-xs text-center w-full">CANCEL</button>
                         </div>
                     )}
                 </div>
