@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro | by Fynovo Studio</title>
+    <title>FinTrack Pro | Fynovo Studio</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -12,20 +12,20 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; margin: 0; }
+        * { -webkit-tap-highlight-color: transparent; outline: none; }
+        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; }
         
         .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
         .dark .ui-card { background: #1e293b !important; border-color: #334155 !important; }
         .dark .nav-bar { background: #1e293b !important; border-top: 1px solid #334155 !important; }
 
-        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2.5rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2.5rem; transition: all 0.3s ease; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; height: 90px; z-index: 50; }
-        
-        .btn-press:active { transform: scale(0.92); opacity: 0.8; }
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-animate { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .btn-press:active { transform: scale(0.94); opacity: 0.9; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-ui { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 </head>
 <body class="bg-[#f8fafc] text-[#1e293b]">
@@ -39,73 +39,82 @@
             return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
-        const CATEGORIES = {
+        const CATS = {
             INCOME: [{ id: 'i1', n: 'Salary', i: 'banknote' }, { id: 'i2', n: 'Business', i: 'briefcase' }, { id: 'i3', n: 'Gift', i: 'gift' }],
-            EXPENSE: [{ id: 'e1', n: 'Food', i: 'utensils' }, { id: 'e2', n: 'Fuel', i: 'fuel' }, { id: 'e3', n: 'Bills', i: 'zap' }, { id: 'e4', n: 'Home', i: 'home' }]
+            EXPENSE: [{ id: 'e1', n: 'Food', i: 'utensils' }, { id: 'e2', n: 'Fuel', i: 'fuel' }, { id: 'e3', n: 'Bills', i: 'zap' }, { id: 'e4', n: 'Home', i: 'home' }, { id: 'e5', n: 'Other', i: 'layers' }]
         };
 
         function App() {
-            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_fynovo_v1')) || []);
+            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_v_pro_stable')) || []);
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
             const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
             const [tab, setTab] = useState('dashboard');
-            
             const [modal, setModal] = useState(false);
             const [showPrivacy, setShowPrivacy] = useState(false);
-            const [entryType, setEntryType] = useState('EXPENSE');
-            const [selectedCat, setSelectedCat] = useState(CATEGORIES.EXPENSE[0]);
-            const [amount, setAmount] = useState('');
+
+            const [type, setType] = useState('EXPENSE');
+            const [cat, setCat] = useState(CATS.EXPENSE[0]);
+            const [amt, setAmt] = useState('');
 
             useEffect(() => {
-                localStorage.setItem('ft_fynovo_v1', JSON.stringify(logs));
+                localStorage.setItem('ft_v_pro_stable', JSON.stringify(logs));
                 localStorage.setItem('ft_dark', darkMode);
                 localStorage.setItem('ft_cur', currency);
                 document.documentElement.classList.toggle('dark', darkMode);
             }, [logs, darkMode, currency]);
 
-            const stats = useMemo(() => {
+            useEffect(() => { setCat(CATS[type][0]); }, [type]);
+
+            const analytics = useMemo(() => {
                 const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + b.amt, 0);
                 const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + b.amt, 0);
-                return { balance: inc - exp, income: inc, expense: exp };
-            }, [logs]);
+                const catGroup = logs.filter(l => l.type === 'EXPENSE').reduce((acc, curr) => {
+                    acc[curr.cat.n] = (acc[curr.cat.n] || 0) + curr.amt;
+                    return acc;
+                }, {});
+                return { bal: inc - exp, inc, exp, catGroup };
+            }, [logs, currency]);
 
             const handleSave = () => {
-                const val = parseFloat(amount);
+                const val = parseFloat(amt);
                 if (!val || val <= 0) return;
-                setLogs([{ id: Date.now(), amt: val, type: entryType, cat: selectedCat, date: new Date().toLocaleDateString('en-GB') }, ...logs]);
+                const entry = { id: Date.now(), amt: val, type, cat, date: new Date().toLocaleDateString('en-GB') };
+                setLogs([entry, ...logs]);
                 setModal(false);
-                setAmount('');
+                setAmt('');
             };
 
             return (
-                <div className="min-h-screen max-w-md mx-auto pb-32 relative bg-[#f8fafc] dark:bg-slate-950">
+                <div className="min-h-screen max-w-md mx-auto pb-32 relative">
                     <header className="p-8 flex justify-between items-center">
                         <div>
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Fynovo Studio</span>
-                            <h1 className="text-3xl font-[900] italic uppercase">{tab}</h1>
+                            <h1 className="text-2xl font-black text-blue-600 italic tracking-tighter uppercase">{tab}</h1>
+                            <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em]">by Fynovo Studio</p>
                         </div>
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-4 rounded-3xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 btn-press">
+                        <button onClick={() => setDarkMode(!darkMode)} className="p-4 rounded-3xl bg-white dark:bg-slate-800 shadow-sm btn-press">
                             <Icon name={darkMode ? 'sun' : 'moon'} className="text-blue-500" />
                         </button>
                     </header>
 
                     <main className="px-6 space-y-6">
                         {tab === 'dashboard' && (
-                            <div className="space-y-6">
-                                <div className="ui-card p-10 bg-slate-900 dark:bg-blue-600 text-white border-none shadow-2xl">
-                                    <p className="text-[11px] font-bold opacity-50 uppercase tracking-widest text-center mb-2">Current Balance</p>
-                                    <h2 className="text-4xl font-black text-center">{currency} {stats.balance.toLocaleString()}</h2>
+                            <div className="space-y-6 animate-ui">
+                                <div className="ui-card p-10 text-center bg-gradient-to-br from-blue-600 to-blue-800 text-white border-none shadow-2xl">
+                                    <p className="text-[10px] font-bold opacity-70 uppercase tracking-widest mb-1">Total Balance</p>
+                                    <h2 className="text-4xl font-black">{currency} {analytics.bal.toLocaleString()}</h2>
+                                    <div className="mt-6 flex justify-between text-[11px] font-black uppercase opacity-90 border-t border-white/10 pt-4">
+                                        <div className="text-emerald-300">Income: {analytics.inc.toLocaleString()}</div>
+                                        <div className="text-rose-300">Expense: {analytics.exp.toLocaleString()}</div>
+                                    </div>
                                 </div>
                                 <div className="space-y-3">
                                     {logs.slice(0, 10).map(l => (
-                                        <div key={l.id} className="ui-card p-5 flex justify-between items-center">
+                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center">
                                             <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${l.type==='INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                    <Icon name={l.cat.i} size={20} />
-                                                </div>
-                                                <div><p className="font-black text-sm">{l.cat.n}</p><p className="text-[10px] opacity-40">{l.date}</p></div>
+                                                <div className={`w-12 h-12 rounded-3xl flex items-center justify-center ${l.type==='INCOME'?'bg-emerald-500/10 text-emerald-500':'bg-rose-500/10 text-rose-500'}`}><Icon name={l.cat.i} /></div>
+                                                <div><p className="font-bold text-sm">{l.cat.n}</p><p className="text-[10px] opacity-40 font-bold">{l.date}</p></div>
                                             </div>
-                                            <p className={`font-black ${l.type==='INCOME'?'text-emerald-500':'text-rose-500'}`}>{currency} {l.amt}</p>
+                                            <p className={`font-black ${l.type==='INCOME'?'text-emerald-500':'text-rose-500'}`}>{l.type==='INCOME'?'+':'-'}{l.amt}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -113,68 +122,57 @@
                         )}
 
                         {tab === 'setup' && (
-                            <div className="space-y-6">
-                                <div className="ui-card p-6 space-y-4">
-                                    <p className="text-[10px] font-black opacity-30 uppercase px-2">Settings & Security</p>
-                                    
-                                    <button onClick={() => setShowPrivacy(true)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">
-                                        Privacy Policy <Icon name="shield-check" className="text-blue-600" />
-                                    </button>
-
-                                    <a href="mailto:fynovostudio@gmail.com?subject=Support Request" className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">
-                                        Email Support <Icon name="mail" className="text-blue-600" />
-                                    </a>
-
-                                    <a href="mailto:fynovostudio@gmail.com?subject=App Feedback" className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">
-                                        Send Feedback <Icon name="message-square" className="text-blue-600" />
-                                    </a>
+                            <div className="ui-card p-6 space-y-6 animate-ui">
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-[2rem]">
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-3 px-2">Currency</p>
+                                    <div className="grid grid-cols-4 gap-2">
+                                        {['AED', 'USD', 'PKR', 'INR'].map(c => (
+                                            <button key={c} onClick={()=>setCurrency(c)} className={`py-3 rounded-2xl font-bold text-xs ${currency===c?'bg-blue-600 text-white':'bg-white dark:bg-slate-900 opacity-40'}`}>{c}</button>
+                                        ))}
+                                    </div>
                                 </div>
-
-                                <div className="text-center pt-4">
-                                    <p className="text-[10px] font-black opacity-20 uppercase tracking-[0.3em]">FinTrack Pro v2.0</p>
-                                    <p className="text-[11px] font-black text-blue-600/40 uppercase mt-1 tracking-widest italic">Designed by Fynovo Studio</p>
+                                <div className="pt-4 border-t dark:border-slate-700 space-y-3">
+                                    <button onClick={() => setShowPrivacy(true)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-[2rem] font-bold text-sm btn-press">Privacy Policy <Icon name="shield-check" className="text-blue-600"/></button>
+                                    <a href="mailto:fynovostudio@gmail.com" className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-[2rem] font-bold text-sm btn-press">Support & Feedback <Icon name="mail" className="text-blue-600" /></a>
+                                    <div className="text-center py-4 text-[10px] font-black opacity-20 uppercase tracking-[0.3em]">
+                                        Proudly Developed by Fynovo Studio
+                                    </div>
+                                    <button onClick={() => confirm("Clear all?") && setLogs([])} className="w-full py-4 text-rose-500 font-bold text-[10px] uppercase tracking-[0.4em] opacity-40">Reset App</button>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    {/* Action FABs */}
-                    <div className="fixed bottom-28 right-8 flex flex-col gap-4 z-40">
-                        <button onClick={() => { setEntryType('INCOME'); setModal(true); }} className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg btn-press"><Icon name="plus" /></button>
-                        <button onClick={() => { setEntryType('EXPENSE'); setModal(true); }} className="w-16 h-16 bg-rose-500 text-white rounded-3xl flex items-center justify-center shadow-2xl btn-press"><Icon name="minus" /></button>
-                    </div>
+                    <button onClick={() => setModal(true)} className="fixed bottom-32 right-8 w-16 h-16 bg-blue-600 text-white rounded-[2.2rem] flex items-center justify-center shadow-2xl z-40 btn-press"><Icon name="plus" size={32}/></button>
 
-                    {/* Modal Entry */}
                     {modal && (
-                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col modal-animate ${darkMode ? 'bg-slate-950' : 'bg-white'}`}>
-                            <div className="flex justify-between items-center mb-10">
-                                <h2 className="text-2xl font-black italic uppercase">New Log</h2>
+                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col ${darkMode ? 'bg-[#0f172a]' : 'bg-white'}`}>
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-xl font-black uppercase">New Entry</h2>
                                 <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={32}/></button>
                             </div>
-                            <input type="number" inputMode="decimal" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full outline-none mb-10" autoFocus />
-                            <button onClick={handleSave} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-xl shadow-2xl btn-press">SAVE TO LEDGER</button>
+                            <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-[2.5rem] mb-8">
+                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-[2rem] font-black text-xs uppercase ${type==='INCOME'?'bg-blue-600 text-white':'opacity-40'}`}>Income</button>
+                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-[2rem] font-black text-xs uppercase ${type==='EXPENSE'?'bg-blue-600 text-white':'opacity-40'}`}>Expense</button>
+                            </div>
+                            <input type="number" value={amt} onChange={(e)=>setAmt(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full mb-auto outline-none" autoFocus />
+                            <button onClick={handleSave} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-black text-xl btn-press">SAVE TRANSACTION</button>
                         </div>
                     )}
 
-                    {/* Privacy Policy Sheet */}
                     {showPrivacy && (
-                        <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md p-6 flex items-end">
-                            <div className={`w-full p-10 rounded-[3.5rem] modal-animate ${darkMode?'bg-slate-900 border border-slate-800':'bg-white'}`}>
-                                <h2 className="text-2xl font-black mb-6 italic">Privacy Policy</h2>
-                                <div className="space-y-4 text-[12px] font-bold opacity-60 leading-relaxed uppercase">
-                                    <p>• Your data is 100% offline and stays on this device.</p>
-                                    <p>• Fynovo Studio does not collect or track your financial logs.</p>
-                                    <p>• We value your security above everything else.</p>
-                                </div>
-                                <button onClick={()=>setShowPrivacy(false)} className="w-full mt-10 py-5 bg-blue-600 text-white rounded-3xl font-black uppercase btn-press">I Agree</button>
+                        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-md p-6 flex items-end">
+                            <div className={`w-full p-10 rounded-[3.5rem] ${darkMode?'bg-slate-900':'bg-white'}`}>
+                                <h2 className="text-2xl font-black mb-6 italic text-blue-600">Fynovo Studio Privacy</h2>
+                                <p className="text-sm opacity-60 font-bold mb-8 uppercase leading-relaxed">• Your financial data is stored only on this device.<br/>• Fynovo Studio has no access to your logs.<br/>• Offline first security enabled.</p>
+                                <button onClick={()=>setShowPrivacy(false)} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-black uppercase btn-press">Understood</button>
                             </div>
                         </div>
                     )}
 
                     <nav className="nav-bar flex justify-around items-center px-10 pb-4">
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1 transition-all ${tab==='dashboard'?'text-blue-600':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
-                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center gap-1 transition-all ${tab==='analytics'?'text-blue-600':'opacity-20'}`}><Icon name="pie-chart"/><span className="text-[9px] font-black uppercase">Analytics</span></button>
-                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1 transition-all ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1 ${tab==='dashboard'?'text-blue-600':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
+                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1 ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
                     </nav>
                 </div>
             );
