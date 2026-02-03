@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack Pro - Time & Date</title>
+    <title>FinTrack Pro - Analytics</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -34,17 +34,8 @@
         };
 
         const CATS = {
-            INCOME: [
-                { id: 'salary', title: 'Salary', icon: 'banknote' },
-                { id: 'business', title: 'Business', icon: 'briefcase' },
-                { id: 'gift', title: 'Gift', icon: 'gift' }
-            ],
-            EXPENSE: [
-                { id: 'food', title: 'Food', icon: 'utensils' },
-                { id: 'transport', title: 'Transport', icon: 'car' },
-                { id: 'rent', title: 'Rent', icon: 'home' },
-                { id: 'health', title: 'Heart', icon: 'heart-pulse' }
-            ]
+            INCOME: [{ id: 'salary', title: 'Salary', icon: 'banknote' }, { id: 'business', title: 'Business', icon: 'briefcase' }, { id: 'gift', title: 'Gift', icon: 'gift' }],
+            EXPENSE: [{ id: 'food', title: 'Food', icon: 'utensils' }, { id: 'transport', title: 'Transport', icon: 'car' }, { id: 'rent', title: 'Home', icon: 'home' }, { id: 'health', title: 'Health', icon: 'heart-pulse' }]
         };
 
         function App() {
@@ -70,26 +61,20 @@
                 localStorage.setItem('ft_auth', isLoggedIn);
             }, [transactions, currency, isDarkMode, isLoggedIn, userName]);
 
-            const total = transactions.reduce((acc, t) => t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
+            // Total Balance Calculation
+            const totalBalance = transactions.reduce((acc, t) => t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
 
-            const confirmDelete = (id) => {
-                if (window.confirm("Kyan aap waqai is entry ko delete karna chahte hain?")) {
-                    setTransactions(transactions.filter(t => t.id !== id));
-                }
-            };
+            // --- MONTHLY ANALYTICS LOGIC ---
+            const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+            const currentMonthYear = new Date().getMonth() + "-" + new Date().getFullYear();
 
-            const exportPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.text("FinTrack Expense Report", 20, 20);
-                doc.text(`User: ${userName} | Balance: ${currency} ${total}`, 20, 30);
-                let y = 50;
-                transactions.forEach((t) => {
-                    doc.text(`${t.fullDate} | ${t.category.title}: ${currency} ${t.amount} [${t.type}]`, 20, y);
-                    y += 10;
-                });
-                doc.save("Report.pdf");
-            };
+            const monthlyIncome = transactions
+                .filter(t => t.monthKey === currentMonthYear && t.type === 'INCOME')
+                .reduce((acc, t) => acc + Number(t.amount), 0);
+
+            const monthlyExpense = transactions
+                .filter(t => t.monthKey === currentMonthYear && t.type === 'EXPENSE')
+                .reduce((acc, t) => acc + Number(t.amount), 0);
 
             const themeBg = isDarkMode ? "bg-black text-white" : "bg-slate-50 text-slate-900";
             const cardBg = isDarkMode ? "bg-slate-900/50" : "bg-white shadow-md border-slate-200";
@@ -98,8 +83,8 @@
                 return (
                     <div className={`min-h-screen flex flex-col justify-center p-8 ${themeBg} text-center`}>
                         <h1 className="text-5xl font-black mb-10 text-blue-500 italic uppercase">FinTrack</h1>
-                        <input type="text" placeholder="Your Name" className="w-full bg-slate-800/20 p-5 rounded-2xl outline-none border border-slate-700 mb-6 text-center font-bold" value={userName} onChange={(e)=>setUserName(e.target.value)} />
-                        <button onClick={() => userName && setIsLoggedIn(true)} className="bg-blue-600 p-6 rounded-3xl font-black text-white w-full">GET STARTED</button>
+                        <input type="text" placeholder="Enter Your Name" className="w-full bg-slate-800/20 p-5 rounded-2xl outline-none border border-slate-700 mb-6 text-center font-bold" value={userName} onChange={(e)=>setUserName(e.target.value)} />
+                        <button onClick={() => userName && setIsLoggedIn(true)} className="bg-blue-600 p-6 rounded-3xl font-black text-white w-full">START TRACKING</button>
                     </div>
                 );
             }
@@ -108,16 +93,31 @@
                 <div className={`min-h-screen pb-40 transition-all ${themeBg}`}>
                     <div className={`p-6 flex justify-between items-center border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                         <h1 className="text-xl font-black text-blue-500 italic uppercase">FinTrack</h1>
-                        <button onClick={() => setIsDarkMode(!isDarkMode)}><Icon name={isDarkMode ? "sun" : "moon"} size={20} /></button>
+                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-blue-500/10 text-blue-500"><Icon name={isDarkMode ? "sun" : "moon"} size={20} /></button>
                     </div>
 
                     <div className="p-6">
                         {tab === 'dashboard' && (
                             <div>
-                                <div className={`glass-card p-10 text-center mb-8 ${cardBg}`}>
-                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest leading-loose">Balance</p>
-                                    <h2 className="text-4xl font-black">{currency} {total.toLocaleString()}</h2>
+                                {/* Overall Balance Card */}
+                                <div className={`glass-card p-8 text-center mb-4 ${cardBg}`}>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Total Balance</p>
+                                    <h2 className="text-4xl font-black">{currency} {totalBalance.toLocaleString()}</h2>
                                 </div>
+
+                                {/* Monthly Siding Summary Feature */}
+                                <div className={`glass-card p-5 mb-8 flex justify-between items-center ${isDarkMode ? 'bg-blue-600/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+                                    <div className="flex-1 border-r border-blue-500/10 pr-4">
+                                        <p className="text-[8px] font-black text-blue-500 uppercase mb-1">{currentMonthName} Income</p>
+                                        <p className="text-lg font-black text-green-500">+{currency} {monthlyIncome}</p>
+                                    </div>
+                                    <div className="flex-1 pl-4">
+                                        <p className="text-[8px] font-black text-blue-500 uppercase mb-1">{currentMonthName} Spent</p>
+                                        <p className="text-lg font-black text-red-500">-{currency} {monthlyExpense}</p>
+                                    </div>
+                                </div>
+
+                                <p className="text-[10px] font-black opacity-30 uppercase mb-4 ml-2">Recent Activity</p>
                                 <div className="space-y-3">
                                     {transactions.map(t => (
                                         <div key={t.id} className={`glass-card p-4 flex justify-between items-center ${cardBg}`}>
@@ -130,8 +130,7 @@
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>{t.amount}</span>
-                                                <button onClick={() => {setEditingId(t.id); setAmount(t.amount); setType(t.type); setSelectedCat(t.category); setShowAddPage(true);}} className="opacity-20"><Icon name="edit-3" size={14} /></button>
-                                                <button onClick={() => confirmDelete(t.id)} className="opacity-20 text-red-500"><Icon name="trash" size={14} /></button>
+                                                <button onClick={() => { if(confirm("Delete this entry?")) setTransactions(transactions.filter(i=>i.id!==t.id)) }} className="opacity-20 text-red-500"><Icon name="trash" size={14} /></button>
                                             </div>
                                         </div>
                                     ))}
@@ -142,12 +141,19 @@
                         {tab === 'settings' && (
                             <div className="space-y-4">
                                 <div className={`glass-card p-6 ${cardBg}`}>
-                                    <button onClick={exportPDF} className="w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 mb-6"><Icon name="file-text" size={20} /> DOWNLOAD REPORT</button>
-                                    <div className="mb-6 text-left">
-                                        <label className="text-[10px] font-bold opacity-40 uppercase mb-2 block ml-1">Currency</label>
+                                    <p className="text-center font-black text-blue-500 mb-6 uppercase tracking-widest italic">{userName}'s FinTrack</p>
+                                    <button onClick={() => {
+                                        const { jsPDF } = window.jspdf;
+                                        const doc = new jsPDF();
+                                        doc.text(`Report for ${userName}`, 20, 20);
+                                        transactions.forEach((t, i) => doc.text(`${t.fullDate}: ${t.amount} (${t.type})`, 20, 40 + (i*10)));
+                                        doc.save("FinTrack_Report.pdf");
+                                    }} className="w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 mb-6"><Icon name="file-text" size={20} /> GENERATE PDF</button>
+                                    
+                                    <div className="mb-4">
                                         <div className={`border rounded-xl ${isDarkMode ? 'border-slate-800 bg-black/40' : 'border-slate-200 bg-slate-100'}`}>
                                             <button onClick={() => setIsCurrOpen(!isCurrOpen)} className="w-full p-4 flex justify-between items-center font-bold">
-                                                <span>{currency}</span>
+                                                <span>Currency: {currency}</span>
                                                 <Icon name={isCurrOpen ? "chevron-up" : "chevron-down"} size={16} />
                                             </button>
                                             <div className={`dropdown-content ${isCurrOpen ? 'dropdown-open border-t border-slate-800' : ''}`}>
@@ -163,11 +169,11 @@
                         )}
                     </div>
 
-                    <button onClick={() => {setEditingId(null); setAmount(''); setShowAddPage(true)}} className="fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center"><Icon name="plus" size={32} /></button>
+                    <button onClick={() => setShowAddPage(true)} className="fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center shadow-blue-500/40"><Icon name="plus" size={32} /></button>
 
                     <div className={`fixed bottom-[60px] left-0 right-0 h-20 nav-blur flex justify-around items-center z-50 ${isDarkMode ? 'bg-black/90' : 'bg-white/90'}`}>
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="grid" /><span className="text-[10px] mt-1 font-bold">HOME</span></button>
-                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="settings" /><span className="text-[10px] mt-1 font-bold">SETTINGS</span></button>
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500 font-bold' : 'opacity-30'}`}><Icon name="grid" /><span className="text-[10px] mt-1 uppercase">Home</span></button>
+                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500 font-bold' : 'opacity-30'}`}><Icon name="settings" /><span className="text-[10px] mt-1 uppercase">Settings</span></button>
                     </div>
 
                     {showAddPage && (
@@ -185,14 +191,12 @@
                             <button onClick={() => {
                                 if(!amount) return;
                                 const now = new Date();
-                                const formattedDate = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' });
-                                const formattedTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                const fullStamp = `${formattedDate} • ${formattedTime}`;
+                                const monthKey = now.getMonth() + "-" + now.getFullYear();
+                                const fullStamp = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + " • " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-                                if (editingId) setTransactions(transactions.map(t => t.id === editingId ? { ...t, amount, type, category: selectedCat } : t));
-                                else setTransactions([{ id: Date.now(), amount, type, category: selectedCat, fullDate: fullStamp }, ...transactions]);
-                                setShowAddPage(false);
-                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 shadow-lg shadow-blue-500/30">CONFIRM</button>
+                                setTransactions([{ id: Date.now(), amount, type, category: selectedCat, fullDate: fullStamp, monthKey: monthKey }, ...transactions]);
+                                setShowAddPage(false); setAmount('');
+                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 shadow-xl">SAVE ENTRY</button>
                             <button onClick={() => setShowAddPage(false)} className="opacity-40 font-bold text-xs text-center w-full uppercase">Cancel</button>
                         </div>
                     )}
