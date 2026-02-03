@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro - Ultimate</title>
+    <title>FinTrack Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,141 +13,202 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Fredoka:wght@400;700&display=swap');
-        :root { --radius: 1.25rem; }
-        .theme-classic { font-family: 'Inter', sans-serif; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --border: 1px solid #e2e8f0; --bear: none; }
-        .theme-comic { font-family: 'Fredoka', sans-serif; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --border: 3px solid #ffffff; --bear: flex; }
-        body { background: var(--bg); color: var(--text); transition: 0.2s; margin: 0; -webkit-tap-highlight-color: transparent; }
-        .ui-card { background: var(--card); border: var(--border); border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .bear-ui { display: var(--bear); position: relative; width: 60px; height: 60px; }
-        .prop { position: absolute; }
-        .nav-bar { background: var(--card); border-top: 1px solid rgba(0,0,0,0.1); backdrop-filter: blur(10px); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; }
+        .classic-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .nav-blur { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-top: 1px solid #e2e8f0; }
+        .bear-static { font-size: 50px; position: relative; display: inline-block; }
+        .bear-prop { position: absolute; font-size: 22px; }
         ::-webkit-scrollbar { display: none; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        const Icon = ({ name, size = 18 }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, size]);
-            return <i data-lucide={name} style={{ width: size, height: size }}></i>;
+        // Optimized Icon Component
+        const LucideIcon = ({ name, size = 18, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
         };
 
-        const CATS = {
+        const CATEGORIES = {
             INCOME: [
-                { id: 'i1', n: 'Salary', i: 'banknote' },
-                { id: 'i2', n: 'Business', i: 'briefcase' },
-                { id: 'i3', n: 'Other', i: 'plus' }
+                { id: 'inc_1', label: 'Salary', icon: 'banknote' },
+                { id: 'inc_2', label: 'Business', icon: 'briefcase' },
+                { id: 'inc_3', label: 'Other', icon: 'plus' }
             ],
             EXPENSE: [
-                { id: 'e1', n: 'Food', i: 'utensils' },
-                { id: 'e2', n: 'Health', i: 'heart-pulse' },
-                { id: 'e3', n: 'Rent', i: 'home' },
-                { id: 'e4', n: 'Travel', i: 'car' },
-                { id: 'e5', n: 'Bills', i: 'zap' },
-                { id: 'e6', n: 'Edu', i: 'graduation-cap' }
+                { id: 'exp_1', label: 'Food', icon: 'utensils' },
+                { id: 'exp_2', label: 'Health', icon: 'heart-pulse' }, // Fixed Health
+                { id: 'exp_3', label: 'Rent', icon: 'home' },
+                { id: 'exp_4', label: 'Travel', icon: 'car' },
+                { id: 'exp_5', label: 'Shopping', icon: 'shopping-bag' },
+                { id: 'exp_6', label: 'Bills', icon: 'zap' },
+                { id: 'exp_7', label: 'Education', icon: 'graduation-cap' }
             ]
         };
 
         function App() {
-            const [user, setUser] = useState(() => localStorage.getItem('ft_u') || '');
-            const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('ft_u'));
-            const [theme, setTheme] = useState(() => localStorage.getItem('ft_t') || 'classic');
-            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_l')) || []);
-            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_g')) || 50000);
+            // Data Persistence
+            const [user, setUser] = useState(() => localStorage.getItem('ft_username') || '');
+            const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('ft_username'));
+            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_logs')) || []);
+            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_goal')) || 50000);
+            const [bearEnabled, setBearEnabled] = useState(() => localStorage.getItem('ft_bear_mode') === 'true');
             
-            const [tab, setTab] = useState('home');
-            const [modal, setModal] = useState(false);
-            const [policyModal, setPolicyModal] = useState(false);
+            // UI State
+            const [activeTab, setActiveTab] = useState('home');
+            const [showModal, setShowModal] = useState(false);
+            const [showPolicy, setShowPolicy] = useState(false);
+            
+            // Form State
             const [editId, setEditId] = useState(null);
-            const [amt, setAmt] = useState('');
+            const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
-            const [cat, setCat] = useState(CATS.EXPENSE[0]);
+            const [selectedCat, setSelectedCat] = useState(CATEGORIES.EXPENSE[0]);
 
             useEffect(() => {
-                localStorage.setItem('ft_u', user);
-                localStorage.setItem('ft_t', theme);
-                localStorage.setItem('ft_l', JSON.stringify(logs));
-                localStorage.setItem('ft_g', goal);
-                document.body.className = `theme-${theme}`;
-            }, [user, theme, logs, goal]);
+                localStorage.setItem('ft_username', user);
+                localStorage.setItem('ft_logs', JSON.stringify(logs));
+                localStorage.setItem('ft_goal', goal);
+                localStorage.setItem('ft_bear_mode', bearEnabled);
+            }, [user, logs, goal, bearEnabled]);
 
-            const tIn = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
-            const tOut = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
-            const balance = tIn - tOut;
+            // Financial Calculations
+            const stats = useMemo(() => {
+                const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
+                const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
+                return { inc, exp, bal: inc - exp };
+            }, [logs]);
 
-            const save = () => {
-                if (!amt) return;
-                const d = new Date();
-                const entry = {
+            const handleSave = () => {
+                if (!amount || amount <= 0) return;
+                const now = new Date();
+                const newEntry = {
                     id: editId || Date.now(),
-                    amt, type, cat,
-                    date: d.toLocaleDateString('en-GB'),
-                    time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    amt: amount,
+                    type,
+                    cat: selectedCat,
+                    date: now.toLocaleDateString('en-GB'),
+                    time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
-                setLogs(editId ? logs.map(l => l.id === editId ? entry : l) : [entry, ...logs]);
-                setModal(false); setAmt(''); setEditId(null);
+
+                if (editId) {
+                    setLogs(logs.map(item => item.id === editId ? newEntry : item));
+                } else {
+                    setLogs([newEntry, ...logs]);
+                }
+                resetForm();
             };
 
-            const exportPDF = () => {
+            const resetForm = () => {
+                setShowModal(false);
+                setAmount('');
+                setEditId(null);
+                setType('EXPENSE');
+                setSelectedCat(CATEGORIES.EXPENSE[0]);
+            };
+
+            const exportToPDF = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                doc.text(`FinTrack Pro Report: ${user}`, 14, 15);
+                doc.setFontSize(18);
+                doc.text("FinTrack Pro - Financial Report", 14, 20);
+                doc.setFontSize(10);
+                doc.text(`User: ${user} | Generated: ${new Date().toLocaleString()}`, 14, 28);
+                
+                const tableData = logs.map(l => [l.date, l.time, l.cat.label, l.type, `Rs ${l.amt}`]);
                 doc.autoTable({
+                    startY: 35,
                     head: [['Date', 'Time', 'Category', 'Type', 'Amount']],
-                    body: logs.map(l => [l.date, l.time, l.cat.n, l.type, `Rs ${l.amt}`]),
-                    startY: 25,
+                    body: tableData,
+                    theme: 'grid'
                 });
-                doc.save(`FinTrack_Report_${Date.now()}.pdf`);
+                doc.save(`FinTrack_Report_${user}.pdf`);
             };
 
             if (!isAuth) return (
-                <div className="min-h-screen flex flex-col justify-center p-10 bg-white">
-                    <h1 className="text-5xl font-black text-blue-600 italic mb-10">FINTRACK</h1>
-                    <input type="text" placeholder="Your Name" className="w-full p-5 border-2 rounded-2xl mb-4 font-bold outline-none" onChange={(e)=>setUser(e.target.value)} />
-                    <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-lg">START</button>
+                <div className="min-h-screen bg-white flex flex-col justify-center p-10">
+                    <h1 className="text-6xl font-black text-blue-600 italic tracking-tighter mb-2">FINTRACK</h1>
+                    <p className="text-gray-400 font-bold mb-10 text-xs tracking-widest uppercase">Smart Expense Manager</p>
+                    <input type="text" placeholder="What is your name?" className="w-full p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl mb-4 font-bold outline-none focus:border-blue-600 transition-all" onChange={(e)=>setUser(e.target.value)} />
+                    <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all">GET STARTED</button>
                 </div>
             );
 
             return (
-                <div className="min-h-screen pb-40">
-                    <div className="p-6 flex justify-between items-center">
-                        <div><h1 className="text-2xl font-black text-blue-600 italic leading-none">FINTRACK</h1><p className="text-[10px] font-bold opacity-30 uppercase">{user}</p></div>
-                        <button onClick={()=>setTheme(theme==='classic'?'comic':'classic')} className="p-3 ui-card bg-white"><Icon name="palette"/></button>
-                    </div>
+                <div className="min-h-screen max-w-md mx-auto relative">
+                    {/* Header */}
+                    <header className="p-6 flex justify-between items-center bg-white/50 sticky top-0 z-30 backdrop-blur-md">
+                        <div>
+                            <h1 className="text-2xl font-black text-blue-600 italic tracking-tighter">FINTRACK</h1>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{user}</p>
+                        </div>
+                        <div className="p-2.5 bg-white border border-gray-100 rounded-full shadow-sm text-blue-600">
+                            <LucideIcon name="shield-check" size={20} />
+                        </div>
+                    </header>
 
-                    <div className="p-6">
-                        {tab === 'home' && (
+                    <main className="px-6 pb-32">
+                        {activeTab === 'home' && (
                             <div className="space-y-6">
-                                {theme === 'comic' && (
-                                    <div className="ui-card p-5 flex items-center gap-4">
-                                        <div className="bear-ui"><span className="text-5xl">🐻</span>
-                                            {balance < 0 ? <span className="prop top-[-5px] right-0 text-xl">💢</span> : tIn >= goal ? <span className="prop top-[-15px] left-[10px] text-2xl">👑</span> : <span className="prop bottom-0 right-0 text-xl">💼</span>}
+                                {/* Optional Bear Section */}
+                                {bearEnabled && (
+                                    <div className="text-center pt-4">
+                                        <div className="bear-static">
+                                            🐻
+                                            {stats.bal < 0 ? <span className="bear-prop -top-2 -right-2">💢</span> : 
+                                             stats.inc >= goal ? <span className="bear-prop -top-4 left-4">👑</span> : 
+                                             <span className="bear-prop bottom-0 -right-2">💼</span>}
                                         </div>
-                                        <p className="font-black text-blue-400">MoneBear: {balance < 0 ? "Overspent!" : "All Good!"}</p>
                                     </div>
                                 )}
-                                <div className="ui-card p-10 text-center bg-white">
-                                    <p className="text-[10px] font-bold opacity-30 mb-1 uppercase tracking-widest">Balance</p>
-                                    <h2 className="text-4xl font-black">Rs {balance.toLocaleString()}</h2>
+
+                                {/* Balance Card */}
+                                <div className="classic-card p-10 text-center relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                                        <LucideIcon name="wallet" size={80} />
+                                    </div>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Available Balance</p>
+                                    <h2 className="text-5xl font-black tracking-tighter">Rs {stats.bal.toLocaleString()}</h2>
                                 </div>
+
+                                {/* Transactions */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center px-1">
-                                        <p className="text-[10px] font-bold opacity-30 uppercase">Logs</p>
-                                        <button onClick={exportPDF} className="text-[10px] font-bold text-blue-600 flex items-center gap-1 uppercase tracking-tighter"><Icon name="file-text" size={12}/> Export PDF</button>
+                                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Transaction History</h3>
+                                        <button onClick={exportToPDF} className="flex items-center gap-1.5 text-blue-600 text-[10px] font-black uppercase">
+                                            <LucideIcon name="file-down" size={14} /> PDF Export
+                                        </button>
                                     </div>
-                                    {logs.map(l => (
-                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center bg-white">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Icon name={l.cat.i}/></div>
-                                                <div><p className="font-bold text-sm leading-none mb-1">{l.cat.n}</p><p className="text-[9px] font-bold opacity-30 uppercase">{l.date} • {l.time}</p></div>
+                                    
+                                    {logs.length === 0 && (
+                                        <div className="py-20 text-center opacity-20 italic">No entries found</div>
+                                    )}
+
+                                    {logs.map(log => (
+                                        <div key={log.id} className="classic-card p-4 flex justify-between items-center group">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`p-3 rounded-xl ${log.type === 'INCOME' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'}`}>
+                                                    <LucideIcon name={log.cat.icon} size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-sm leading-none mb-1">{log.cat.label}</p>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase">{log.date} • {log.time}</p>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-4">
-                                                <span className={`font-black ${l.type==='INCOME'?'text-green-500':'text-red-500'}`}>{l.amt}</span>
-                                                <div className="flex gap-2 opacity-20"><button onClick={()=>{setEditId(l.id); setAmt(l.amt); setType(l.type); setCat(l.cat); setModal(true);}}><Icon name="edit-3" size={14}/></button><button onClick={()=>setLogs(logs.filter(i=>i.id!==l.id))}><Icon name="trash-2" size={14}/></button></div>
+                                                <span className={`font-black text-lg ${log.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {log.type === 'INCOME' ? '+' : '-'}{log.amt}
+                                                </span>
+                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => { setEditId(log.id); setAmount(log.amt); setType(log.type); setSelectedCat(log.cat); setShowModal(true); }} className="p-1 text-gray-400 hover:text-blue-600"><LucideIcon name="edit" size={14} /></button>
+                                                    <button onClick={() => setLogs(logs.filter(l => l.id !== log.id))} className="p-1 text-gray-400 hover:text-red-500"><LucideIcon name="trash-2" size={14} /></button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -155,78 +216,97 @@
                             </div>
                         )}
 
-                        {tab === 'stats' && (
+                        {activeTab === 'stats' && (
                             <div className="space-y-6">
-                                <div className="ui-card p-8 bg-white text-center">
-                                    <p className="text-[10px] font-bold opacity-30 mb-4 uppercase">Goal Tracker</p>
-                                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
-                                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${Math.min((tIn/goal)*100, 100)}%` }}></div>
+                                <div className="classic-card p-8 text-center">
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-4 tracking-widest">Savings Goal Tracker</p>
+                                    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-3">
+                                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${Math.min((stats.inc/goal)*100, 100)}%` }}></div>
                                     </div>
-                                    <p className="text-[10px] font-bold opacity-30 uppercase">Target: Rs {goal}</p>
+                                    <div className="flex justify-between text-[10px] font-bold text-gray-400 uppercase">
+                                        <span>Earned: {stats.inc}</span>
+                                        <span>Target: {goal}</span>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="ui-card p-6 bg-white"><p className="text-[10px] font-bold opacity-30 mb-1">IN</p><p className="text-2xl font-black text-green-500">{tIn}</p></div>
-                                    <div className="ui-card p-6 bg-white"><p className="text-[10px] font-bold opacity-30 mb-1">OUT</p><p className="text-2xl font-black text-red-500">{tOut}</p></div>
-                                </div>
-                            </div>
-                        )}
-
-                        {tab === 'setup' && (
-                            <div className="space-y-4">
-                                <div className="ui-card p-6 bg-white">
-                                    <p className="text-xs font-bold mb-3">Monthly Target</p>
-                                    <input type="number" className="w-full p-4 bg-slate-50 border rounded-xl font-bold mb-6 outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} />
-                                    <div className="space-y-2">
-                                        <button onClick={()=>setPolicyModal(true)} className="w-full flex justify-between p-4 bg-slate-50 rounded-xl font-bold text-sm">Privacy Policy <Icon name="shield-check"/></button>
-                                        <a href="mailto:support@fynovo.com" className="flex justify-between p-4 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm">Feedback <Icon name="mail"/></a>
-                                        <button onClick={()=>{if(confirm("Wipe everything?")){localStorage.clear(); window.location.reload();}}} className="w-full flex justify-between p-4 text-red-500 font-bold text-sm">Reset All <Icon name="trash-2"/></button>
+                                    <div className="classic-card p-6">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Income</p>
+                                        <p className="text-2xl font-black text-green-500">{stats.inc}</p>
+                                    </div>
+                                    <div className="classic-card p-6">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Expense</p>
+                                        <p className="text-2xl font-black text-red-500">{stats.exp}</p>
                                     </div>
                                 </div>
                             </div>
                         )}
-                    </div>
 
-                    <button onClick={()=>{setEditId(null); setAmt(''); setModal(true);}} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"><Icon name="plus" size={30}/></button>
-                    <div className="fixed bottom-0 left-0 right-0 h-24 nav-bar flex justify-around items-center px-4 pb-4 z-50">
-                        <button onClick={()=>setTab('home')} className={`flex flex-col items-center flex-1 ${tab==='home'?'text-blue-600':'opacity-20'}`}><Icon name="list"/><span className="text-[9px] font-black mt-1">LOGS</span></button>
-                        <button onClick={()=>setTab('stats')} className={`flex flex-col items-center flex-1 ${tab==='stats'?'text-blue-600':'opacity-20'}`}><Icon name="bar-chart-3"/><span className="text-[9px] font-black mt-1">STATS</span></button>
-                        <button onClick={()=>setTab('setup')} className={`flex flex-col items-center flex-1 ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings"/><span className="text-[9px] font-black mt-1">SETUP</span></button>
-                    </div>
+                        {activeTab === 'setup' && (
+                            <div className="space-y-4">
+                                <div className="classic-card p-6 space-y-6">
+                                    <div>
+                                        <h3 className="text-sm font-bold mb-4">Preference Settings</h3>
+                                        <button onClick={() => setBearEnabled(!bearEnabled)} className={`w-full p-4 rounded-xl font-bold text-sm flex justify-between items-center transition-all ${bearEnabled ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-100 text-gray-500'}`}>
+                                            MoneBear Mascot {bearEnabled ? 'Enabled' : 'Disabled'}
+                                            <LucideIcon name={bearEnabled ? "toggle-right" : "toggle-left"} size={20} />
+                                        </button>
+                                    </div>
+                                    
+                                    <div>
+                                        <h3 className="text-sm font-bold mb-3">Set Monthly Goal</h3>
+                                        <input type="number" className="w-full p-4 bg-gray-50 border rounded-xl font-black outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} />
+                                    </div>
 
-                    {modal && (
-                        <div className="fixed inset-0 z-[100] bg-white p-6 flex flex-col">
-                            <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-2xl">
-                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold ${type==='INCOME'?'bg-green-600 text-white':'opacity-40'}`}>INCOME</button>
-                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold ${type==='EXPENSE'?'bg-red-600 text-white':'opacity-40'}`}>EXPENSE</button>
+                                    <div className="pt-4 border-t space-y-2">
+                                        <button onClick={() => setShowPolicy(true)} className="w-full p-4 flex justify-between font-bold text-sm bg-gray-50 rounded-xl">Privacy Policy <LucideIcon name="shield-text" /></button>
+                                        <button onClick={() => { if(confirm("Wipe all data?")) { localStorage.clear(); window.location.reload(); } }} className="w-full p-4 flex justify-between font-bold text-sm text-red-500">Reset App <LucideIcon name="trash-2" /></button>
+                                    </div>
+                                </div>
                             </div>
+                        )}
+                    </main>
+
+                    {/* Navbar */}
+                    <div className="fixed bottom-8 left-6 right-6 flex items-center justify-between z-40 pointer-events-none">
+                        <div className="flex-1"></div>
+                        <button onClick={resetForm} onClick={() => setShowModal(true)} className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl pointer-events-auto active:scale-90 transition-transform">
+                            <LucideIcon name="plus" size={32} />
+                        </button>
+                        <div className="flex-1"></div>
+                    </div>
+
+                    <nav className="fixed bottom-0 left-0 right-0 h-24 nav-blur px-8 pb-4 flex justify-around items-center z-30">
+                        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center gap-1 ${activeTab === 'home' ? 'text-blue-600' : 'text-gray-300'}`}>
+                            <LucideIcon name="layout-dashboard" size={22} /><span className="text-[9px] font-black uppercase">Home</span>
+                        </button>
+                        <button onClick={() => setActiveTab('stats')} className={`flex flex-col items-center gap-1 ${activeTab === 'stats' ? 'text-blue-600' : 'text-gray-300'}`}>
+                            <LucideIcon name="bar-chart-big" size={22} /><span className="text-[9px] font-black uppercase">Stats</span>
+                        </button>
+                        <button onClick={() => setActiveTab('setup')} className={`flex flex-col items-center gap-1 ${activeTab === 'setup' ? 'text-blue-600' : 'text-gray-300'}`}>
+                            <LucideIcon name="settings-2" size={22} /><span className="text-[9px] font-black uppercase">Setup</span>
+                        </button>
+                    </nav>
+
+                    {/* Entry Modal */}
+                    {showModal && (
+                        <div className="fixed inset-0 z-[100] bg-white p-6 flex flex-col">
+                            <div className="flex gap-2 mb-8 bg-gray-100 p-1 rounded-2xl">
+                                <button onClick={() => { setType('INCOME'); setSelectedCat(CATEGORIES.INCOME[0]); }} className={`flex-1 py-4 rounded-xl font-black transition-all ${type === 'INCOME' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-400'}`}>INCOME</button>
+                                <button onClick={() => { setType('EXPENSE'); setSelectedCat(CATEGORIES.EXPENSE[0]); }} className={`flex-1 py-4 rounded-xl font-black transition-all ${type === 'EXPENSE' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-400'}`}>EXPENSE</button>
+                            </div>
+                            
                             <div className="grid grid-cols-4 gap-2 mb-8">
-                                {CATS[type].map(c => (
-                                    <button key={c.id} onClick={()=>setCat(c)} className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1 ${cat.id===c.id?'border-blue-600 bg-blue-50 text-blue-600':'border-transparent bg-slate-50 opacity-40'}`}><Icon name={c.i}/><span className="text-[8px] font-bold uppercase">{c.n}</span></button>
+                                {CATEGORIES[type].map(c => (
+                                    <button key={c.id} onClick={() => setSelectedCat(c)} className={`p-3 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${selectedCat.id === c.id ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-transparent bg-gray-50 text-gray-400'}`}>
+                                        <LucideIcon name={c.icon} size={20} />
+                                        <span className="text-[8px] font-black uppercase">{c.label}</span>
+                                    </button>
                                 ))}
                             </div>
-                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-7xl w-full py-10 outline-none text-center font-black mb-10 text-slate-800" value={amt} onChange={(e)=>setAmt(e.target.value)} autoFocus />
-                            <button onClick={save} className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xl font-black shadow-xl uppercase">Confirm</button>
-                            <button onClick={()=>setModal(false)} className="mt-8 opacity-40 font-bold text-xs uppercase text-center w-full">Cancel</button>
-                        </div>
-                    )}
 
-                    {policyModal && (
-                        <div className="fixed inset-0 z-[110] bg-white p-8 overflow-y-auto">
-                            <h2 className="text-2xl font-black mb-6">Privacy Policy</h2>
-                            <div className="space-y-4 text-sm opacity-70 leading-relaxed">
-                                <p><strong>1. Data Storage:</strong> All financial records are stored 100% locally on your device.</p>
-                                <p><strong>2. No Tracking:</strong> We do not collect, share, or sell your personal or financial data.</p>
-                                <p><strong>3. Export:</strong> PDF reports are generated locally on your phone.</p>
-                                <p><strong>4. Deletion:</strong> Deleting the app will erase all your locally stored data.</p>
+                            <div className="flex-1 flex flex-col justify-center">
+                                <p className="text-center text-[10px] font-black text-gray-300 uppercase mb-2">Enter Amount</p>
+                                <input type="number" placeholder="0" className="w-full text-7xl font-black text-center outline-none bg-transparent mb-10 text-gray-800" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
                             </div>
-                            <button onClick={()=>setPolicyModal(false)} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black mt-10 shadow-lg uppercase">Close</button>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+
+                            <button onClick
