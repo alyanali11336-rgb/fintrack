@@ -4,58 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SmartSpend Pro</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --primary: #6366f1; --bg: #f8fafc; --surface: #ffffff;
-            --text-main: #1e293b; --text-sub: #64748b;
-            --success: #10b981; --danger: #ef4444; --border: #e2e8f0;
+            --primary: #4f46e5; --bg: #f1f5f9; --surface: #ffffff;
+            --text-main: #0f172a; --text-sub: #64748b;
+            --success: #059669; --danger: #dc2626; --border: #e2e8f0;
         }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text-main); height: 100vh; overflow: hidden; }
-
-        /* Navigation Pages */
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); margin: 0; color: var(--text-main); height: 100vh; overflow: hidden; }
+        
+        /* Layout */
         .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 100px; box-sizing: border-box; }
         .page.active { display: block; }
 
-        /* Header & Tabs */
+        /* Professional Header */
         .header { background: var(--surface); padding: 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
-        .balance-summary { background: linear-gradient(135deg, #1e293b, #334155); padding: 20px; border-radius: 20px; color: white; margin-bottom: 15px; }
-        .view-switcher { display: flex; background: #f1f5f9; padding: 4px; border-radius: 12px; }
-        .view-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 600; color: var(--text-sub); background: transparent; cursor: pointer; }
-        .view-btn.active { background: var(--surface); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .balance-card { 
+            background: #1e293b; padding: 25px; border-radius: 20px; color: white; 
+            margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+        }
+        
+        /* Icon Containers */
+        .icon-circle {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; flex-shrink: 0;
+        }
 
-        /* Content Areas */
-        .container { padding: 20px; }
-        .card-item { background: var(--surface); padding: 15px; border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        /* Lists */
+        .container { padding: 15px; }
+        .tx-item { 
+            background: var(--surface); padding: 14px; border-radius: 16px; 
+            margin-bottom: 10px; border: 1px solid var(--border); 
+            display: flex; justify-content: space-between; align-items: center; 
+        }
+        .tx-detail { display: flex; align-items: center; gap: 12px; }
 
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
-        .nav-item { color: var(--text-sub); text-align: center; font-size: 1.2rem; cursor: pointer; flex: 1; }
+        /* Navigation */
+        .bottom-nav { 
+            position: fixed; bottom: 0; width: 100%; height: 75px; 
+            background: var(--surface); display: flex; justify-content: space-around; 
+            align-items: center; border-top: 1px solid var(--border); 
+        }
+        .nav-item { color: var(--text-sub); text-align: center; cursor: pointer; transition: 0.2s; }
         .nav-item.active { color: var(--primary); }
-        .nav-item span { display: block; font-size: 0.7rem; }
+        .nav-item i { font-size: 1.25rem; }
 
-        /* FAB */
-        .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; background: var(--primary); border-radius: 50%; color: white; border: none; font-size: 24px; box-shadow: 0 4px 12px rgba(99,102,241,0.4); z-index: 99; }
+        /* Tab Control */
+        .tab-nav { display: flex; background: #e2e8f0; padding: 4px; border-radius: 10px; margin-top: 10px; }
+        .tab-btn { 
+            flex: 1; padding: 8px; border: none; border-radius: 8px; 
+            font-weight: 600; color: var(--text-sub); background: transparent; cursor: pointer; 
+        }
+        .tab-btn.active { background: var(--surface); color: var(--text-main); }
 
-        /* Modal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: flex-end; z-index: 1000; }
+        /* Form styling */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); align-items: flex-end; z-index: 1000; }
         .modal-content { background: var(--surface); width: 100%; padding: 25px; border-radius: 24px 24px 0 0; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; }
+        input, select { 
+            width: 100%; padding: 12px; margin: 8px 0; border: 1px solid var(--border); 
+            border-radius: 10px; font-size: 1rem; background: #f8fafc;
+        }
+
+        .fab { 
+            position: fixed; bottom: 95px; right: 20px; width: 56px; height: 56px; 
+            background: var(--primary); border-radius: 16px; color: white; 
+            border: none; font-size: 20px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); z-index: 99; 
+        }
     </style>
 </head>
 <body>
 
-    <div id="page-wallet" class="page active">
+    <div id="page-home" class="page active">
         <div class="header">
-            <div class="balance-summary">
-                <small>Available Balance</small>
-                <h1 id="total-balance">$0.00</h1>
+            <div class="balance-card">
+                <small style="text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7;">Current Balance</small>
+                <h1 id="main-balance" style="margin: 5px 0 15px 0; font-size: 2rem;">0.00</h1>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                        <small style="display:block; opacity: 0.7;">Total Income</small>
+                        <span id="head-inc" style="font-weight: 700; color: #34d399;">0</span>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 12px;">
+                        <small style="display:block; opacity: 0.7;">Total Expense</small>
+                        <span id="head-exp" style="font-weight: 700; color: #fb7185;">0</span>
+                    </div>
+                </div>
             </div>
-            <div class="view-switcher">
-                <button class="view-btn active" onclick="switchView('expense', this)">Expenses</button>
-                <button class="view-btn" onclick="switchView('income', this)">Income</button>
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="setTab('expense', this)">Spending</button>
+                <button class="tab-btn" onclick="setTab('income', this)">Earnings</button>
             </div>
         </div>
         <div class="container" id="tx-list"></div>
@@ -63,56 +103,75 @@
 
     <div id="page-stats" class="page">
         <div class="container">
-            <h2>Analytics</h2>
-            <div style="background:white; padding:15px; border-radius:20px; margin-bottom:20px;">
-                <canvas id="statChart"></canvas>
+            <h2 style="margin: 10px 0 20px 0;">Analytics</h2>
+            <div style="background: white; padding: 25px; border-radius: 20px; border: 1px solid var(--border);">
+                <canvas id="expenseChart"></canvas>
             </div>
-            <div id="stat-breakdown"></div>
+            <h4 style="margin: 25px 0 15px 0;">Distribution</h4>
+            <div id="category-list"></div>
         </div>
     </div>
 
     <div id="page-settings" class="page">
         <div class="container">
-            <h2>Settings</h2>
-            <div class="card-item" onclick="clearData()" style="color:var(--danger)">
-                <span><i class="fas fa-trash-alt"></i> Clear All Data</span>
-                <i class="fas fa-chevron-right"></i>
+            <h2 style="margin: 10px 0 20px 0;">Settings</h2>
+            <div style="background: var(--surface); border-radius: 16px; border: 1px solid var(--border); overflow: hidden;">
+                <div style="padding: 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <span><i class="fas fa-coins" style="margin-right:10px; color: var(--text-sub)"></i> Currency</span>
+                    <select id="currency-select" onchange="updateCurrency()" style="width: auto; margin: 0; padding: 5px;">
+                        <option value="$">USD ($)</option>
+                        <option value="Rs">PKR (Rs)</option>
+                        <option value="€">EUR (€)</option>
+                    </select>
+                </div>
+                <div style="padding: 18px; color: var(--danger);" onclick="resetApp()">
+                    <i class="fas fa-trash-can" style="margin-right:10px;"></i> Purge All Data
+                </div>
             </div>
-            <div class="card-item" onclick="exportJSON()">
-                <span><i class="fas fa-file-export"></i> Export JSON</span>
-                <i class="fas fa-download"></i>
-            </div>
-            <p style="text-align:center; color:var(--text-sub); margin-top:20px;">Version 2026.1.0</p>
         </div>
     </div>
 
     <button class="fab" onclick="openModal()"><i class="fas fa-plus"></i></button>
 
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="navTo('page-wallet', this)"><i class="fas fa-wallet"></i><span>Home</span></div>
-        <div class="nav-item" onclick="navTo('page-stats', this)"><i class="fas fa-chart-pie"></i><span>Stats</span></div>
-        <div class="nav-item" onclick="navTo('page-settings', this)"><i class="fas fa-cog"></i><span>Settings</span></div>
+        <div class="nav-item active" onclick="navTo('page-home', this)"><i class="fas fa-house"></i><span>Home</span></div>
+        <div class="nav-item" onclick="navTo('page-stats', this)"><i class="fas fa-chart-pie"></i><span>Analysis</span></div>
+        <div class="nav-item" onclick="navTo('page-settings', this)"><i class="fas fa-sliders"></i><span>Settings</span></div>
     </nav>
 
     <div id="modal" class="modal" onclick="if(event.target == this) closeModal()">
         <div class="modal-content">
-            <h3 id="modal-title">New Expense</h3>
-            <input type="number" id="amt" placeholder="Amount">
-            <input type="text" id="desc" placeholder="Label (e.g. Rent)">
+            <h3 id="modal-title" style="margin-top:0">New Entry</h3>
+            <input type="hidden" id="edit-id">
+            <input type="number" id="amt" placeholder="0.00" step="0.01">
+            <input type="text" id="desc" placeholder="Description">
             <select id="cat">
-                <option value="Food">🍔 Food</option>
-                <option value="Salary">💰 Salary</option>
-                <option value="Shopping">🛍️ Shopping</option>
-                <option value="Bills">🧾 Bills</option>
+                <option value="Food">Dining & Groceries</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Bills">Bills & Utilities</option>
+                <option value="Transport">Transportation</option>
+                <option value="Salary">Professional Income</option>
             </select>
-            <button id="sub-btn" onclick="addTx()" style="width:100%; padding:15px; border:none; border-radius:12px; color:white; font-weight:bold; background:var(--danger)">Save</button>
+            <button id="save-btn" onclick="saveTransaction()" style="width:100%; padding:15px; border:none; border-radius:12px; color:white; font-weight:700; margin-top:10px;">Confirm Transaction</button>
         </div>
     </div>
 
     <script>
-        let transactions = JSON.parse(localStorage.getItem('smart_pro_v4')) || [];
-        let activeView = 'expense';
-        let myChart = null;
+        let transactions = JSON.parse(localStorage.getItem('smart_pro_v6')) || [];
+        let currency = localStorage.getItem('smart_cur') || '$';
+        let currentActiveTab = 'expense';
+        let chartObj = null;
+
+        const professionalIcons = {
+            Food: { icon: 'fa-utensils', color: '#f59e0b' },
+            Shopping: { icon: 'fa-bag-shopping', color: '#8b5cf6' },
+            Bills: { icon: 'fa-file-invoice-dollar', color: '#ef4444' },
+            Transport: { icon: 'fa-car', color: '#3b82f6' },
+            Salary: { icon: 'fa-briefcase', color: '#10b981' },
+            Other: { icon: 'fa-circle-nodes', color: '#64748b' }
+        };
+
+        document.getElementById('currency-select').value = currency;
 
         function navTo(pageId, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -122,28 +181,48 @@
             if(pageId === 'page-stats') renderStats();
         }
 
-        function switchView(view, btn) {
-            activeView = view;
-            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        function setTab(type, btn) {
+            currentActiveTab = type;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderHome();
         }
 
-        function openModal() {
-            document.getElementById('modal').style.display = 'flex';
-            const btn = document.getElementById('sub-btn');
-            btn.innerText = `Add ${activeView}`;
-            btn.style.background = activeView === 'income' ? 'var(--success)' : 'var(--danger)';
+        function openModal(editId = null) {
+            const modal = document.getElementById('modal');
+            modal.style.display = 'flex';
+            if(editId) {
+                const tx = transactions.find(t => t.id === editId);
+                document.getElementById('edit-id').value = tx.id;
+                document.getElementById('amt').value = tx.amt;
+                document.getElementById('desc').value = tx.desc;
+                document.getElementById('cat').value = tx.cat;
+            } else {
+                document.getElementById('edit-id').value = '';
+                document.getElementById('amt').value = '';
+                document.getElementById('desc').value = '';
+            }
+            document.getElementById('save-btn').style.background = currentActiveTab === 'income' ? 'var(--success)' : 'var(--primary)';
         }
 
         function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
-        function addTx() {
+        function saveTransaction() {
+            const id = document.getElementById('edit-id').value;
             const amt = parseFloat(document.getElementById('amt').value);
             const desc = document.getElementById('desc').value;
+            const cat = document.getElementById('cat').value;
+
             if(!amt || !desc) return;
-            transactions.push({ id: Date.now(), type: activeView, amt, desc, cat: document.getElementById('cat').value });
-            localStorage.setItem('smart_pro_v4', JSON.stringify(transactions));
+
+            if(id) {
+                const idx = transactions.findIndex(t => t.id == id);
+                transactions[idx] = { ...transactions[idx], amt, desc, cat };
+            } else {
+                transactions.push({ id: Date.now(), type: currentActiveTab, amt, desc, cat });
+            }
+
+            localStorage.setItem('smart_pro_v6', JSON.stringify(transactions));
             closeModal();
             renderHome();
         }
@@ -151,35 +230,73 @@
         function renderHome() {
             const list = document.getElementById('tx-list');
             list.innerHTML = '';
-            let total = 0;
-            transactions.forEach(t => total += (t.type === 'income' ? t.amt : -t.amt));
-            document.getElementById('total-balance').innerText = `$${total.toLocaleString()}`;
+            let inc = 0, exp = 0;
 
-            transactions.filter(t => t.type === activeView).slice().reverse().forEach(tx => {
-                list.innerHTML += `<div class="card-item">
-                    <span><b>${tx.desc}</b><br><small>${tx.cat}</small></span>
-                    <b style="color:${tx.type === 'income' ? 'var(--success)' : 'var(--danger)'}">${tx.type === 'income' ? '+' : '-'}$${tx.amt}</b>
-                </div>`;
+            transactions.forEach(t => t.type === 'income' ? inc += t.amt : exp += t.amt);
+            
+            document.getElementById('main-balance').innerText = `${currency}${(inc - exp).toLocaleString()}`;
+            document.getElementById('head-inc').innerText = `${currency}${inc.toLocaleString()}`;
+            document.getElementById('head-exp').innerText = `${currency}${exp.toLocaleString()}`;
+
+            transactions.filter(t => t.type === currentActiveTab).slice().reverse().forEach(tx => {
+                const meta = professionalIcons[tx.cat] || professionalIcons.Other;
+                list.innerHTML += `
+                    <div class="tx-item">
+                        <div class="tx-detail">
+                            <div class="icon-circle" style="background: ${meta.color}20; color: ${meta.color};">
+                                <i class="fas ${meta.icon}"></i>
+                            </div>
+                            <div>
+                                <div style="font-weight:600">${tx.desc}</div>
+                                <small style="color:var(--text-sub)">${tx.cat}</small>
+                            </div>
+                        </div>
+                        <div style="text-align:right">
+                            <div style="font-weight:700; color:${tx.type === 'income' ? 'var(--success)' : 'var(--text-main)'}">
+                                ${tx.type === 'income' ? '+' : '-'}${currency}${tx.amt.toLocaleString()}
+                            </div>
+                            <small style="color:var(--primary); cursor:pointer" onclick="openModal(${tx.id})">Edit</small>
+                        </div>
+                    </div>`;
             });
         }
 
         function renderStats() {
-            const totals = {};
-            transactions.filter(t => t.type === 'expense').forEach(t => totals[t.cat] = (totals[t.cat] || 0) + t.amt);
-            const ctx = document.getElementById('statChart').getContext('2d');
-            if(myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
+            const cats = {};
+            transactions.filter(t => t.type === 'expense').forEach(t => cats[t.cat] = (cats[t.cat] || 0) + t.amt);
+            
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            if(chartObj) chartObj.destroy();
+            chartObj = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'] }] }
+                data: {
+                    labels: Object.keys(cats),
+                    datasets: [{ 
+                        data: Object.values(cats), 
+                        backgroundColor: ['#f59e0b', '#8b5cf6', '#ef4444', '#3b82f6', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '70%', plugins: { legend: { position: 'bottom' } } }
             });
-            document.getElementById('stat-breakdown').innerHTML = Object.keys(totals).map(k => `<div class="card-item"><span>${k}</span><b>$${totals[k]}</b></div>`).join('');
+
+            document.getElementById('category-list').innerHTML = Object.keys(cats).map(k => `
+                <div class="tx-item">
+                    <div class="tx-detail">
+                        <div class="icon-circle" style="background:#eee;"><i class="fas ${professionalIcons[k]?.icon || 'fa-folder'}"></i></div>
+                        <span>${k}</span>
+                    </div>
+                    <b>${currency}${cats[k].toLocaleString()}</b>
+                </div>`).join('');
         }
 
-        function clearData() { if(confirm("Clear all?")) { localStorage.clear(); location.reload(); } }
-        function exportJSON() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions));
-            const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "data.json"); dl.click();
+        function updateCurrency() {
+            currency = document.getElementById('currency-select').value;
+            localStorage.setItem('smart_cur', currency);
+            renderHome();
         }
+
+        function resetApp() { if(confirm("Confirm data wipe?")) { localStorage.clear(); location.reload(); } }
 
         renderHome();
     </script>
