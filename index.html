@@ -3,178 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro - Official</title>
+    <title>FinTrack Pro - Ultimate</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Fredoka:wght@400;700&display=swap');
-        
-        :root { --card-rotate: 0deg; --card-border: 1px solid #e2e8f0; --card-shadow: 0 1px 3px rgba(0,0,0,0.1); --bear-display: none; }
-        
-        .theme-classic { font-family: 'Inter', sans-serif; --card-rotate: 0deg; --card-border: 1px solid #e2e8f0; --card-shadow: 0 1px 3px rgba(0,0,0,0.05); --bear-display: none; }
-        .theme-comic { font-family: 'Fredoka', sans-serif; --card-rotate: -1.5deg; --card-border: 4px solid #ffffff; --card-shadow: 8px 8px 0px #2563eb; --bear-display: block; }
-
-        body { transition: background 0.3s; margin: 0; -webkit-tap-highlight-color: transparent; }
-        .custom-card { 
-            transform: rotate(var(--card-rotate)); 
-            border: var(--card-border); 
-            box-shadow: var(--card-shadow); 
-            transition: all 0.2s;
-        }
-        
-        /* Bear Props */
-        .bear-box { position: relative; width: 80px; height: 80px; display: var(--bear-display); }
-        .bear-emoji { font-size: 60px; z-index: 10; position: relative; }
-        .prop { position: absolute; z-index: 20; transition: all 0.3s; }
-        .crown { top: -20px; left: 15px; font-size: 30px; transform: rotate(-15deg); }
-        .briefcase { bottom: 0; right: -5px; font-size: 25px; }
-        .angry { top: -5px; right: -5px; font-size: 25px; }
-
-        .bear-wiggle { animation: wiggle 3s ease-in-out infinite; }
-        @keyframes wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg) translateY(-5px); } }
-        
-        .nav-bar { backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.05); }
+        :root { --radius: 1.25rem; }
+        .theme-classic { font-family: 'Inter', sans-serif; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; --border: 1px solid #e2e8f0; --bear: none; }
+        .theme-comic { font-family: 'Fredoka', sans-serif; --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --border: 3px solid #ffffff; --bear: flex; }
+        body { background: var(--bg); color: var(--text); transition: 0.2s; margin: 0; -webkit-tap-highlight-color: transparent; }
+        .ui-card { background: var(--card); border: var(--border); border-radius: var(--radius); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .bear-ui { display: var(--bear); position: relative; width: 60px; height: 60px; }
+        .prop { position: absolute; }
+        .nav-bar { background: var(--card); border-top: 1px solid rgba(0,0,0,0.1); backdrop-filter: blur(10px); }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="theme-classic">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
         const Icon = ({ name, size = 18 }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, size]);
             return <i data-lucide={name} style={{ width: size, height: size }}></i>;
         };
 
-        const CATEGORIES = {
+        const CATS = {
             INCOME: [
-                { id: 'salary', n: 'Salary', i: 'banknote' },
-                { id: 'gift', n: 'Gift', i: 'gift' },
-                { id: 'freelance', n: 'Work', i: 'laptop' }
+                { id: 'i1', n: 'Salary', i: 'banknote' },
+                { id: 'i2', n: 'Business', i: 'briefcase' },
+                { id: 'i3', n: 'Other', i: 'plus' }
             ],
             EXPENSE: [
-                { id: 'food', n: 'Food', i: 'utensils' },
-                { id: 'rent', n: 'Rent', i: 'home' },
-                { id: 'bill', n: 'Bills', i: 'zap' },
-                { id: 'fun', n: 'Fun', i: 'clapperboard' }
+                { id: 'e1', n: 'Food', i: 'utensils' },
+                { id: 'e2', n: 'Health', i: 'heart-pulse' },
+                { id: 'e3', n: 'Rent', i: 'home' },
+                { id: 'e4', n: 'Travel', i: 'car' },
+                { id: 'e5', n: 'Bills', i: 'zap' },
+                { id: 'e6', n: 'Edu', i: 'graduation-cap' }
             ]
         };
 
         function App() {
-            const [user, setUser] = useState(() => localStorage.getItem('ft_user') || '');
-            const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('ft_user'));
-            const [theme, setTheme] = useState(() => localStorage.getItem('ft_theme') || 'classic');
-            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_logs')) || []);
-            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_goal')) || 50000);
+            const [user, setUser] = useState(() => localStorage.getItem('ft_u') || '');
+            const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('ft_u'));
+            const [theme, setTheme] = useState(() => localStorage.getItem('ft_t') || 'classic');
+            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_l')) || []);
+            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_g')) || 50000);
             
-            const [activeTab, setActiveTab] = useState('home');
+            const [tab, setTab] = useState('home');
             const [modal, setModal] = useState(false);
+            const [policyModal, setPolicyModal] = useState(false);
             const [editId, setEditId] = useState(null);
             const [amt, setAmt] = useState('');
             const [type, setType] = useState('EXPENSE');
-            const [cat, setCat] = useState(CATEGORIES.EXPENSE[0]);
+            const [cat, setCat] = useState(CATS.EXPENSE[0]);
 
             useEffect(() => {
-                localStorage.setItem('ft_user', user);
-                localStorage.setItem('ft_theme', theme);
-                localStorage.setItem('ft_logs', JSON.stringify(logs));
-                localStorage.setItem('ft_goal', goal);
-                document.body.className = `theme-${theme} ${theme === 'comic' ? 'bg-slate-900' : 'bg-slate-50'}`;
+                localStorage.setItem('ft_u', user);
+                localStorage.setItem('ft_t', theme);
+                localStorage.setItem('ft_l', JSON.stringify(logs));
+                localStorage.setItem('ft_g', goal);
+                document.body.className = `theme-${theme}`;
             }, [user, theme, logs, goal]);
 
-            const totalInc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
-            const totalExp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
-            const balance = totalInc - totalExp;
+            const tIn = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
+            const tOut = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
+            const balance = tIn - tOut;
 
-            const saveEntry = () => {
+            const save = () => {
                 if (!amt) return;
+                const d = new Date();
                 const entry = {
                     id: editId || Date.now(),
                     amt, type, cat,
-                    date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    date: d.toLocaleDateString('en-GB'),
+                    time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
-                if (editId) setLogs(logs.map(l => l.id === editId ? entry : l));
-                else setLogs([entry, ...logs]);
+                setLogs(editId ? logs.map(l => l.id === editId ? entry : l) : [entry, ...logs]);
                 setModal(false); setAmt(''); setEditId(null);
             };
 
-            const editEntry = (l) => {
-                setEditId(l.id); setAmt(l.amt); setType(l.type); setCat(l.cat); setModal(true);
+            const exportPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(`FinTrack Pro Report: ${user}`, 14, 15);
+                doc.autoTable({
+                    head: [['Date', 'Time', 'Category', 'Type', 'Amount']],
+                    body: logs.map(l => [l.date, l.time, l.cat.n, l.type, `Rs ${l.amt}`]),
+                    startY: 25,
+                });
+                doc.save(`FinTrack_Report_${Date.now()}.pdf`);
             };
 
-            if (!isAuth) {
-                return (
-                    <div className="min-h-screen flex flex-col justify-center p-8 text-center bg-white theme-classic">
-                        <h1 className="text-5xl font-black text-blue-600 italic mb-2 tracking-tighter">FINTRACK</h1>
-                        <p className="text-xs opacity-40 font-bold mb-10">THE ONLY APP YOU NEED</p>
-                        <input type="text" placeholder="YOUR NAME" className="w-full p-5 rounded-2xl bg-slate-50 border-2 border-slate-100 text-center font-bold mb-4" onChange={(e)=>setUser(e.target.value)} />
-                        <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-bold shadow-xl">START TRACKING</button>
-                    </div>
-                );
-            }
+            if (!isAuth) return (
+                <div className="min-h-screen flex flex-col justify-center p-10 bg-white">
+                    <h1 className="text-5xl font-black text-blue-600 italic mb-10">FINTRACK</h1>
+                    <input type="text" placeholder="Your Name" className="w-full p-5 border-2 rounded-2xl mb-4 font-bold outline-none" onChange={(e)=>setUser(e.target.value)} />
+                    <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-lg">START</button>
+                </div>
+            );
 
             return (
-                <div className={`min-h-screen pb-40 transition-all`}>
-                    {/* Top Bar */}
+                <div className="min-h-screen pb-40">
                     <div className="p-6 flex justify-between items-center">
-                        <div>
-                            <h1 className="text-2xl font-black text-blue-600 italic">FINTRACK</h1>
-                            <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Welcome, {user}</p>
-                        </div>
-                        <div className="flex gap-4">
-                             <button onClick={()=>setTheme(theme==='classic'?'comic':'classic')} className="p-2 bg-white rounded-full shadow-sm border border-slate-100"><Icon name="palette"/></button>
-                        </div>
+                        <div><h1 className="text-2xl font-black text-blue-600 italic leading-none">FINTRACK</h1><p className="text-[10px] font-bold opacity-30 uppercase">{user}</p></div>
+                        <button onClick={()=>setTheme(theme==='classic'?'comic':'classic')} className="p-3 ui-card bg-white"><Icon name="palette"/></button>
                     </div>
 
                     <div className="p-6">
-                        {activeTab === 'home' && (
+                        {tab === 'home' && (
                             <div className="space-y-6">
-                                {/* Bear System */}
                                 {theme === 'comic' && (
-                                    <div className="custom-card p-6 bg-slate-800 flex items-center gap-6">
-                                        <div className="bear-box bear-wiggle">
-                                            <span className="bear-emoji">🐻</span>
-                                            {balance < 0 && <span className="prop angry">💢</span>}
-                                            {totalInc >= goal && <span className="prop crown">👑</span>}
-                                            {balance >= 0 && <span className="prop briefcase">💼</span>}
+                                    <div className="ui-card p-5 flex items-center gap-4">
+                                        <div className="bear-ui"><span className="text-5xl">🐻</span>
+                                            {balance < 0 ? <span className="prop top-[-5px] right-0 text-xl">💢</span> : tIn >= goal ? <span className="prop top-[-15px] left-[10px] text-2xl">👑</span> : <span className="prop bottom-0 right-0 text-xl">💼</span>}
                                         </div>
-                                        <div>
-                                            <p className="text-[10px] font-bold opacity-50 uppercase tracking-tighter">MoneBear Mood</p>
-                                            <p className="text-lg font-black text-blue-400 leading-none">
-                                                {balance < 0 ? "STOOOP SPENDING!" : totalInc >= goal ? "KING OF SAVINGS!" : "I'M WATCHING THE COINS"}
-                                            </p>
-                                        </div>
+                                        <p className="font-black text-blue-400">MoneBear: {balance < 0 ? "Overspent!" : "All Good!"}</p>
                                     </div>
                                 )}
-
-                                <div className="custom-card p-10 text-center bg-white">
-                                    <p className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-2">Net Balance</p>
-                                    <h2 className="text-5xl font-black">Rs {balance.toLocaleString()}</h2>
+                                <div className="ui-card p-10 text-center bg-white">
+                                    <p className="text-[10px] font-bold opacity-30 mb-1 uppercase tracking-widest">Balance</p>
+                                    <h2 className="text-4xl font-black">Rs {balance.toLocaleString()}</h2>
                                 </div>
-
                                 <div className="space-y-3">
-                                    <p className="text-[10px] font-black opacity-30 ml-1 uppercase">Transactions</p>
+                                    <div className="flex justify-between items-center px-1">
+                                        <p className="text-[10px] font-bold opacity-30 uppercase">Logs</p>
+                                        <button onClick={exportPDF} className="text-[10px] font-bold text-blue-600 flex items-center gap-1 uppercase tracking-tighter"><Icon name="file-text" size={12}/> Export PDF</button>
+                                    </div>
                                     {logs.map(l => (
-                                        <div key={l.id} className="custom-card p-4 bg-white flex justify-between items-center">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-2 bg-blue-500/10 rounded-xl text-blue-600"><Icon name={l.cat.i}/></div>
-                                                <div>
-                                                    <p className="font-bold text-sm leading-none">{l.cat.n}</p>
-                                                    <p className="text-[9px] font-bold opacity-30 mt-1 uppercase">{l.date} • {l.time}</p>
-                                                </div>
+                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center bg-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Icon name={l.cat.i}/></div>
+                                                <div><p className="font-bold text-sm leading-none mb-1">{l.cat.n}</p><p className="text-[9px] font-bold opacity-30 uppercase">{l.date} • {l.time}</p></div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <span className={`font-black ${l.type==='INCOME'?'text-green-500':'text-red-500'}`}>{l.amt}</span>
-                                                <div className="flex gap-2 opacity-20">
-                                                    <button onClick={()=>editEntry(l)}><Icon name="edit-2" size={14}/></button>
-                                                    <button onClick={()=>setLogs(logs.filter(i=>i.id!==l.id))}><Icon name="trash-2" size={14}/></button>
-                                                </div>
+                                                <div className="flex gap-2 opacity-20"><button onClick={()=>{setEditId(l.id); setAmt(l.amt); setType(l.type); setCat(l.cat); setModal(true);}}><Icon name="edit-3" size={14}/></button><button onClick={()=>setLogs(logs.filter(i=>i.id!==l.id))}><Icon name="trash-2" size={14}/></button></div>
                                             </div>
                                         </div>
                                     ))}
@@ -182,72 +155,76 @@
                             </div>
                         )}
 
-                        {activeTab === 'stats' && (
+                        {tab === 'stats' && (
                             <div className="space-y-6">
-                                <div className="custom-card p-6 bg-white text-center">
-                                    <p className="text-xs font-black opacity-30 mb-4 uppercase">Target Progress</p>
-                                    <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-100">
-                                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${Math.min((totalInc/goal)*100, 100)}%` }}></div>
+                                <div className="ui-card p-8 bg-white text-center">
+                                    <p className="text-[10px] font-bold opacity-30 mb-4 uppercase">Goal Tracker</p>
+                                    <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
+                                        <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${Math.min((tIn/goal)*100, 100)}%` }}></div>
                                     </div>
-                                    <div className="flex justify-between mt-3 text-[10px] font-bold">
-                                        <span className="text-green-600">IN: {totalInc}</span>
-                                        <span className="opacity-30">GOAL: {goal}</span>
-                                    </div>
+                                    <p className="text-[10px] font-bold opacity-30 uppercase">Target: Rs {goal}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="custom-card p-6 bg-white"><p className="text-[10px] font-bold opacity-30">EARNED</p><p className="text-xl font-black text-green-600">Rs {totalInc}</p></div>
-                                    <div className="custom-card p-6 bg-white"><p className="text-[10px] font-bold opacity-30">SPENT</p><p className="text-xl font-black text-red-600">Rs {totalExp}</p></div>
+                                    <div className="ui-card p-6 bg-white"><p className="text-[10px] font-bold opacity-30 mb-1">IN</p><p className="text-2xl font-black text-green-500">{tIn}</p></div>
+                                    <div className="ui-card p-6 bg-white"><p className="text-[10px] font-bold opacity-30 mb-1">OUT</p><p className="text-2xl font-black text-red-500">{tOut}</p></div>
                                 </div>
                             </div>
                         )}
 
-                        {activeTab === 'settings' && (
+                        {tab === 'setup' && (
                             <div className="space-y-4">
-                                <div className="custom-card p-6 bg-white">
-                                    <p className="text-[10px] font-bold opacity-30 uppercase mb-3">Settings</p>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <p className="text-xs font-bold mb-2">Monthly Target</p>
-                                            <input type="number" className="w-full p-4 bg-slate-50 rounded-xl border border-slate-100 font-bold" value={goal} onChange={(e)=>setGoal(e.target.value)} />
-                                        </div>
-                                        <a href="mailto:support@fynovo.com" className="flex justify-between p-4 bg-blue-50 rounded-xl font-bold text-sm text-blue-600">Help & Feedback <Icon name="mail"/></a>
-                                        <button onClick={()=>{localStorage.clear(); window.location.reload();}} className="w-full p-4 text-red-500 font-bold text-sm flex justify-between">Wipe All Data <Icon name="refresh-ccw"/></button>
+                                <div className="ui-card p-6 bg-white">
+                                    <p className="text-xs font-bold mb-3">Monthly Target</p>
+                                    <input type="number" className="w-full p-4 bg-slate-50 border rounded-xl font-bold mb-6 outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} />
+                                    <div className="space-y-2">
+                                        <button onClick={()=>setPolicyModal(true)} className="w-full flex justify-between p-4 bg-slate-50 rounded-xl font-bold text-sm">Privacy Policy <Icon name="shield-check"/></button>
+                                        <a href="mailto:support@fynovo.com" className="flex justify-between p-4 bg-blue-50 text-blue-600 rounded-xl font-bold text-sm">Feedback <Icon name="mail"/></a>
+                                        <button onClick={()=>{if(confirm("Wipe everything?")){localStorage.clear(); window.location.reload();}}} className="w-full flex justify-between p-4 text-red-500 font-bold text-sm">Reset All <Icon name="trash-2"/></button>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Footer Nav */}
-                    <button onClick={() => {setEditId(null); setAmt(''); setModal(true);}} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 transition-transform active:scale-90"><Icon name="plus" size={30}/></button>
-                    
-                    <div className="fixed bottom-[60px] left-0 right-0 h-20 bg-white/90 nav-bar flex justify-around items-center z-50">
-                        <button onClick={()=>setActiveTab('home')} className={`flex flex-col items-center flex-1 ${activeTab==='home'?'text-blue-600':'opacity-30'}`}><Icon name="home"/><span className="text-[9px] mt-1 font-bold">HOME</span></button>
-                        <button onClick={()=>setActiveTab('stats')} className={`flex flex-col items-center flex-1 ${activeTab==='stats'?'text-blue-600':'opacity-30'}`}><Icon name="bar-chart-2"/><span className="text-[9px] mt-1 font-bold">STATS</span></button>
-                        <button onClick={()=>setActiveTab('settings')} className={`flex flex-col items-center flex-1 ${activeTab==='settings'?'text-blue-600':'opacity-30'}`}><Icon name="user"/><span className="text-[9px] mt-1 font-bold">PROFILE</span></button>
+                    <button onClick={()=>{setEditId(null); setAmt(''); setModal(true);}} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"><Icon name="plus" size={30}/></button>
+                    <div className="fixed bottom-0 left-0 right-0 h-24 nav-bar flex justify-around items-center px-4 pb-4 z-50">
+                        <button onClick={()=>setTab('home')} className={`flex flex-col items-center flex-1 ${tab==='home'?'text-blue-600':'opacity-20'}`}><Icon name="list"/><span className="text-[9px] font-black mt-1">LOGS</span></button>
+                        <button onClick={()=>setTab('stats')} className={`flex flex-col items-center flex-1 ${tab==='stats'?'text-blue-600':'opacity-20'}`}><Icon name="bar-chart-3"/><span className="text-[9px] font-black mt-1">STATS</span></button>
+                        <button onClick={()=>setTab('setup')} className={`flex flex-col items-center flex-1 ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings"/><span className="text-[9px] font-black mt-1">SETUP</span></button>
                     </div>
 
-                    {/* Modal */}
                     {modal && (
                         <div className="fixed inset-0 z-[100] bg-white p-6 flex flex-col">
-                            <div className="flex gap-2 mb-8 bg-slate-100 p-1 rounded-2xl">
+                            <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-2xl">
                                 <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold ${type==='INCOME'?'bg-green-600 text-white':'opacity-40'}`}>INCOME</button>
                                 <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold ${type==='EXPENSE'?'bg-red-600 text-white':'opacity-40'}`}>EXPENSE</button>
                             </div>
                             <div className="grid grid-cols-4 gap-2 mb-8">
-                                {CATEGORIES[type].map(c => (
-                                    <button key={c.id} onClick={()=>setCat(c)} className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${cat.id===c.id?'border-blue-500 bg-blue-50 text-blue-600':'border-slate-50 opacity-40'}`}><Icon name={c.i}/><span className="text-[8px] font-bold uppercase">{c.n}</span></button>
+                                {CATS[type].map(c => (
+                                    <button key={c.id} onClick={()=>setCat(c)} className={`p-3 rounded-xl border-2 flex flex-col items-center gap-1 ${cat.id===c.id?'border-blue-600 bg-blue-50 text-blue-600':'border-transparent bg-slate-50 opacity-40'}`}><Icon name={c.i}/><span className="text-[8px] font-bold uppercase">{c.n}</span></button>
                                 ))}
                             </div>
-                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-7xl w-full py-10 outline-none text-center font-black mb-10" value={amt} onChange={(e) => setAmt(e.target.value)} autoFocus />
-                            <button onClick={saveEntry} className="w-full py-6 bg-blue-600 text-white rounded-2xl text-xl font-black shadow-xl uppercase">{editId ? 'Update' : 'Save'} Record</button>
-                            <button onClick={()=>setModal(false)} className="mt-6 opacity-30 font-bold text-xs uppercase tracking-widest text-center w-full">Cancel</button>
+                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-7xl w-full py-10 outline-none text-center font-black mb-10 text-slate-800" value={amt} onChange={(e)=>setAmt(e.target.value)} autoFocus />
+                            <button onClick={save} className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xl font-black shadow-xl uppercase">Confirm</button>
+                            <button onClick={()=>setModal(false)} className="mt-8 opacity-40 font-bold text-xs uppercase text-center w-full">Cancel</button>
+                        </div>
+                    )}
+
+                    {policyModal && (
+                        <div className="fixed inset-0 z-[110] bg-white p-8 overflow-y-auto">
+                            <h2 className="text-2xl font-black mb-6">Privacy Policy</h2>
+                            <div className="space-y-4 text-sm opacity-70 leading-relaxed">
+                                <p><strong>1. Data Storage:</strong> All financial records are stored 100% locally on your device.</p>
+                                <p><strong>2. No Tracking:</strong> We do not collect, share, or sell your personal or financial data.</p>
+                                <p><strong>3. Export:</strong> PDF reports are generated locally on your phone.</p>
+                                <p><strong>4. Deletion:</strong> Deleting the app will erase all your locally stored data.</p>
+                            </div>
+                            <button onClick={()=>setPolicyModal(false)} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black mt-10 shadow-lg uppercase">Close</button>
                         </div>
                     )}
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
