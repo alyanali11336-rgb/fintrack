@@ -10,16 +10,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
         .dark { background-color: #0f1115; color: white; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; border-top: 1px solid rgba(0,0,0,0.05); }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; border-top: 1px solid rgba(0,0,0,0.05); background: white; }
+        .dark .nav-bar { background: #161b22; border-top-color: rgba(255,255,255,0.05); }
+        .ui-card { background: white; border: 1px solid #edf2f7; border-radius: 1.5rem; }
+        .dark .ui-card { background: #161b22; border-color: #2d3748; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .ad-shimmer { background: linear-gradient(90deg, #1a202c 25%, #2d3748 50%, #1a202c 75%); background-size: 200% 100%; animation: shimmer 2s infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
-<body class="bg-[#f8fafc] text-slate-900">
+<body class="bg-[#f7f9fc] text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -30,37 +36,53 @@
             return <i data-lucide={name} style={{ width: size, height: size }}></i>;
         };
 
+        const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
         function App() {
-            // States
             const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_l')) || []);
             const [tab, setTab] = useState('home');
             const [modal, setModal] = useState(false);
             const [showAd, setShowAd] = useState(false);
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
+            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
+            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_g')) || 50000);
+            const [selMonth, setSelMonth] = useState(new Date().getMonth());
 
-            // --- AD LOGIC ---
+            useEffect(() => {
+                localStorage.setItem('ft_dark', darkMode);
+                localStorage.setItem('ft_cur', currency);
+                localStorage.setItem('ft_g', goal);
+                localStorage.setItem('ft_l', JSON.stringify(logs));
+                if (darkMode) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+            }, [darkMode, currency, goal, logs]);
+
+            // --- Stats Logic ---
+            const monthlyStats = useMemo(() => {
+                const filtered = logs.filter(l => {
+                    const [, m] = l.date.split('/');
+                    return parseInt(m) - 1 === selMonth;
+                });
+                const inflow = filtered.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
+                const outflow = filtered.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
+                return { inflow, outflow };
+            }, [logs, selMonth]);
+
+            // --- Ad Logic ---
             const handlePlusClick = () => {
                 const today = new Date().toLocaleDateString('en-GB');
-                // Aaj kitni entries ho chuki hain?
-                const entriesToday = logs.filter(l => l.date === today).length;
-
-                // Agar 2 entries ho chuki hain (yani ye 3rd click hai), toh AD dikhao
-                if (entriesToday >= 2) {
-                    setShowAd(true);
-                } else {
-                    setModal(true);
-                }
+                const count = logs.filter(l => l.date === today).length;
+                if (count >= 2) setShowAd(true);
+                else setModal(true);
             };
 
-            const closeAdAndOpenModal = () => {
-                setShowAd(false);
-                setModal(true);
-            };
-
-            // Basic Logic (Rest of your app functions...)
-            const saveEntry = (amt) => {
+            const saveEntry = (amt, type) => {
                 const d = new Date();
-                const newLog = { id: Date.now(), amt, date: d.toLocaleDateString('en-GB'), type: 'EXPENSE', cat: {n: 'General', i: 'tag'} };
+                const newLog = { 
+                    id: Date.now(), amt, type, 
+                    date: d.toLocaleDateString('en-GB'),
+                    cat: {n: 'General', i: 'tag'} 
+                };
                 setLogs([newLog, ...logs]);
                 setModal(false);
             };
@@ -69,66 +91,120 @@
                 <div className={`min-h-screen max-w-md mx-auto pb-32 ${darkMode ? 'dark text-white' : ''}`}>
                     {/* Header */}
                     <header className="p-6 flex justify-between items-center">
-                        <h2 className="text-xl font-black text-blue-600 italic">FINTRACK</h2>
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-zinc-800 rounded-full">
-                            <Icon name={darkMode ? 'sun' : 'moon'} />
-                        </button>
+                        <div>
+                            <h2 className="text-2xl font-black text-blue-600 italic leading-none">FINTRACK</h2>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">AALIAN</p>
+                        </div>
+                        <select 
+                            className={`px-3 py-1 rounded-lg font-bold text-xs outline-none ${darkMode ? 'bg-zinc-800' : 'bg-white shadow-sm border'}`}
+                            value={currency} onChange={(e)=>setCurrency(e.target.value)}
+                        >
+                            {["AED", "Rs", "₹", "$"].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
                     </header>
 
-                    {/* Main Content Placeholder */}
-                    <div className="p-6 text-center opacity-50">
-                        {logs.length} Entries Done Today
-                        <p className="text-[10px] mt-2">Note: 3rd entry onwards, you will see an Ad slot.</p>
-                    </div>
+                    <main className="px-6 space-y-6">
+                        {tab === 'home' && (
+                            <div className="ui-card p-10 text-center shadow-sm">
+                                <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-2">Total Balance</p>
+                                <h3 className="text-4xl font-black tracking-tighter">
+                                    {currency} {(monthlyStats.inflow - monthlyStats.outflow).toLocaleString()}
+                                </h3>
+                            </div>
+                        )}
 
-                    {/* Plus Button */}
+                        {tab === 'stats' && (
+                            <div className="space-y-4">
+                                {/* Month Selector */}
+                                <div className="ui-card p-4 flex gap-2 overflow-x-auto no-scrollbar">
+                                    {MONTHS.map((m, i) => (
+                                        <button 
+                                            key={m} onClick={() => setSelMonth(i)}
+                                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${selMonth === i ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 dark:bg-zinc-800'}`}
+                                        >
+                                            {m}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="ui-card p-8 text-center">
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-4 tracking-widest">Saving Goal Progress</p>
+                                    <div className="w-full h-3 bg-slate-100 dark:bg-zinc-800 rounded-full mb-2 overflow-hidden">
+                                        <div className="h-full bg-blue-600" style={{width: `${Math.min((monthlyStats.inflow/goal)*100, 100)}%`}}></div>
+                                    </div>
+                                    <p className="text-[10px] font-bold opacity-60">TARGET: {currency} {goal}</p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="ui-card p-6"><p className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Inflow</p><p className="text-xl font-black">{currency} {monthlyStats.inflow}</p></div>
+                                    <div className="ui-card p-6"><p className="text-[10px] font-bold text-rose-500 uppercase mb-1">Outflow</p><p className="text-xl font-black">{currency} {monthlyStats.outflow}</p></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {tab === 'setup' && (
+                            <div className="space-y-4">
+                                <div className="ui-card p-6 space-y-4">
+                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Preferences</p>
+                                    <button onClick={() => setDarkMode(!darkMode)} className="w-full p-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center font-bold text-sm">
+                                        {darkMode ? 'Light Mode' : 'Dark Mode'} <Icon name={darkMode ? 'sun' : 'moon'} />
+                                    </button>
+                                    <div className="pt-2">
+                                        <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-2">Monthly Goal</p>
+                                        <input 
+                                            type="number" className="w-full p-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl font-black outline-none border-none"
+                                            value={goal} onChange={(e) => setGoal(e.target.value)}
+                                        />
+                                    </div>
+                                    <button className="w-full p-4 bg-blue-50 text-blue-600 dark:bg-blue-900/20 rounded-2xl flex justify-between items-center font-bold text-sm">
+                                        Support & Feedback <Icon name="mail" />
+                                    </button>
+                                    <button onClick={() => {if(confirm("Reset?")){localStorage.clear(); location.reload()}}} className="w-full py-4 text-rose-500 font-black text-[10px] uppercase tracking-widest">Reset Application</button>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Action Button */}
                     <button 
-                        onClick={handlePlusClick} 
+                        onClick={handlePlusClick}
                         className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40"
                     >
                         <Icon name="plus" size={32}/>
                     </button>
 
-                    {/* VIDEO AD PLACEHOLDER MODAL */}
+                    {/* AD MODAL */}
                     {showAd && (
-                        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-full aspect-video bg-zinc-800 rounded-2xl flex items-center justify-center border border-zinc-700 mb-6 overflow-hidden relative">
-                                <span className="text-zinc-500 font-bold italic">VIDEO AD PLAYING...</span>
-                                {/* Yahan aapka Ad Network Code (Google AdMob etc.) aayega */}
-                                <div className="absolute top-2 right-2 bg-black/50 px-2 py-1 rounded text-[10px] text-white">Sponsored</div>
+                        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-6 text-center">
+                            <div className="w-full aspect-[9/16] max-h-[70vh] ad-shimmer rounded-3xl mb-8 relative border border-white/10 flex flex-col items-center justify-center">
+                                <Icon name="play" size={48} className="text-white/20 mb-4" />
+                                <p className="text-white/30 font-black italic tracking-tighter uppercase">Video Ad Playing</p>
+                                <button onClick={() => {setShowAd(false); setModal(true);}} className="absolute top-4 right-4 text-white opacity-40"><Icon name="x"/></button>
                             </div>
-                            <h3 className="text-white font-black text-xl mb-2">Support FinTrack Pro</h3>
-                            <p className="text-zinc-400 text-sm mb-8">Watch a quick video to unlock more entries for today!</p>
-                            
-                            <button 
-                                onClick={closeAdAndOpenModal}
-                                className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest"
-                            >
-                                Skip & Continue
-                            </button>
+                            <h3 className="text-white font-black text-xl mb-2">Continue for Free?</h3>
+                            <p className="text-white/40 text-xs mb-8">Watch this ad to add more transactions today.</p>
+                            <button onClick={() => {setShowAd(false); setModal(true);}} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest">Skip & Add Entry</button>
                         </div>
                     )}
 
                     {/* Entry Modal */}
                     {modal && (
                         <div className={`fixed inset-0 z-[100] p-8 flex flex-col ${darkMode ? 'bg-zinc-950' : 'bg-white'}`}>
-                            <h2 className="text-2xl font-black mb-10">Add Transaction</h2>
-                            <input 
-                                type="number" 
-                                placeholder="0" 
-                                className="text-6xl font-black text-center bg-transparent outline-none w-full mb-10"
-                                onKeyDown={(e) => e.key === 'Enter' && saveEntry(e.target.value)}
-                                autoFocus
-                            />
-                            <button onClick={() => setModal(false)} className="text-zinc-500 font-bold">Cancel</button>
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-black italic">NEW ENTRY</h2>
+                                <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={24}/></button>
+                            </div>
+                            <input type="number" id="amtInp" placeholder="0" autoFocus className="text-7xl font-black text-center bg-transparent outline-none mb-10 w-full" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => saveEntry(document.getElementById('amtInp').value, 'INCOME')} className="py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase">Income</button>
+                                <button onClick={() => saveEntry(document.getElementById('amtInp').value, 'EXPENSE')} className="py-5 bg-rose-500 text-white rounded-2xl font-black uppercase">Expense</button>
+                            </div>
                         </div>
                     )}
 
                     {/* Nav Bar */}
-                    <nav className={`nav-bar h-24 flex justify-around items-center ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
-                        <div className="opacity-50 flex flex-col items-center"><Icon name="home"/><span className="text-[9px]">HOME</span></div>
-                        <div className="opacity-50 flex flex-col items-center"><Icon name="activity"/><span className="text-[9px]">STATS</span></div>
-                        <div className="opacity-100 text-blue-600 flex flex-col items-center"><Icon name="settings"/><span className="text-[9px]">SETUP</span></div>
+                    <nav className="nav-bar h-24 flex justify-around items-center px-6 pb-4 z-40">
+                        <button onClick={() => setTab('home')} className={`flex flex-col items-center ${tab === 'home' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="home"/><span className="text-[9px] font-black mt-1">HOME</span></button>
+                        <button onClick={() => setTab('stats')} className={`flex flex-col items-center ${tab === 'stats' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="activity"/><span className="text-[9px] font-black mt-1">STATS</span></button>
+                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center ${tab === 'setup' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black mt-1">SETUP</span></button>
                     </nav>
                 </div>
             );
