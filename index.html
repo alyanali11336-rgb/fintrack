@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FinTrack Pro - Ultimate</title>
+    <title>FinTrack Pro</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -17,7 +17,8 @@
         body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; }
         .ui-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; }
         .nav-bar { background: white; border-top: 1px solid #e2e8f0; position: fixed; bottom: 0; width: 100%; max-width: 448px; }
-        .bar-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bear-static { font-size: 50px; position: relative; display: inline-block; }
+        .bear-badge { position: absolute; font-size: 20px; }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -25,124 +26,120 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect } = React;
 
         const Icon = ({ name, size = 18 }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
             return <i data-lucide={name} style={{ width: size, height: size }}></i>;
         };
 
-        const CATEGORIES = {
+        const CATS = {
             INCOME: [
-                { id: 'i1', n: 'Salary', i: 'banknote', c: 'bg-emerald-500' },
-                { id: 'i2', n: 'Business', i: 'briefcase', c: 'bg-blue-500' },
-                { id: 'i3', n: 'Other', i: 'plus-circle', c: 'bg-slate-500' }
+                { id: 'i1', n: 'Salary', i: 'banknote' },
+                { id: 'i2', n: 'Business', i: 'briefcase' },
+                { id: 'i3', n: 'Other', i: 'plus-circle' }
             ],
             EXPENSE: [
-                { id: 'e1', n: 'Food', i: 'utensils', c: 'bg-orange-500' },
-                { id: 'e2', n: 'Health', i: 'heart-pulse', c: 'bg-rose-500' },
-                { id: 'e3', n: 'Shopping', i: 'shopping-bag', c: 'bg-purple-500' },
-                { id: 'e4', n: 'Travel', i: 'car', c: 'bg-cyan-500' },
-                { id: 'e5', n: 'Bills', i: 'zap', c: 'bg-yellow-500' },
-                { id: 'e6', n: 'Edu', i: 'book', c: 'bg-indigo-500' }
+                { id: 'e1', n: 'Food', i: 'utensils' },
+                { id: 'e2', n: 'Health', i: 'heart-pulse' },
+                { id: 'e3', n: 'Shopping', i: 'shopping-bag' },
+                { id: 'e4', n: 'Travel', i: 'car' },
+                { id: 'e5', n: 'Bills', i: 'zap' },
+                { id: 'e6', n: 'Education', i: 'book' }
             ]
         };
-
-        const CURRENCIES = ['Rs', '$', '₹', '€', '£'];
 
         function App() {
             const [user, setUser] = useState(() => localStorage.getItem('ft_u') || '');
             const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('ft_u'));
-            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'Rs');
             const [bearOn, setBearOn] = useState(() => localStorage.getItem('ft_b') === 'true');
             const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_l')) || []);
             const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_g')) || 50000);
             
             const [tab, setTab] = useState('home');
             const [modal, setModal] = useState(false);
-            const [editId, setEditId] = useState(null);
+            const [policyModal, setPolicyModal] = useState(false);
             const [amt, setAmt] = useState('');
             const [type, setType] = useState('EXPENSE');
-            const [cat, setCat] = useState(CATEGORIES.EXPENSE[0]);
+            const [cat, setCat] = useState(CATS.EXPENSE[0]);
 
             useEffect(() => {
                 localStorage.setItem('ft_u', user);
-                localStorage.setItem('ft_cur', currency);
                 localStorage.setItem('ft_b', bearOn);
                 localStorage.setItem('ft_l', JSON.stringify(logs));
                 localStorage.setItem('ft_g', goal);
-            }, [user, currency, bearOn, logs, goal]);
+            }, [user, bearOn, logs, goal]);
 
-            const stats = useMemo(() => {
-                const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
-                const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
-                
-                // Category-wise Analytics
-                const catData = CATEGORIES.EXPENSE.map(c => {
-                    const total = logs.filter(l => l.cat.id === c.id).reduce((a, b) => a + Number(b.amt), 0);
-                    const percent = exp > 0 ? (total / exp) * 100 : 0;
-                    return { ...c, total, percent };
-                });
+            const tIn = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
+            const tOut = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
+            const bal = tIn - tOut;
 
-                return { inc, exp, bal: inc - exp, catData };
-            }, [logs]);
-
-            const onSave = () => {
+            const save = () => {
                 if (!amt) return;
                 const d = new Date();
                 const entry = {
-                    id: editId || Date.now(),
+                    id: Date.now(),
                     amt: Number(amt), type, cat,
                     date: d.toLocaleDateString('en-GB'),
                     time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 };
-                setLogs(editId ? logs.map(l => l.id === editId ? entry : l) : [entry, ...logs]);
-                setModal(false); setAmt(''); setEditId(null);
+                setLogs([entry, ...logs]);
+                setModal(false); setAmt('');
+            };
+
+            const exportPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text(`FinTrack Report: ${user}`, 14, 20);
+                doc.autoTable({
+                    startY: 30,
+                    head: [['Date', 'Time', 'Category', 'Type', 'Amount']],
+                    body: logs.map(l => [l.date, l.time, l.cat.n, l.type, `Rs ${l.amt}`]),
+                });
+                doc.save('FinTrack_Report.pdf');
             };
 
             if (!isAuth) return (
                 <div className="min-h-screen bg-white flex flex-col justify-center p-10 max-w-md mx-auto">
-                    <h1 className="text-5xl font-black text-blue-600 mb-2 italic tracking-tighter">FINTRACK</h1>
-                    <p className="text-slate-400 font-bold mb-10 text-xs uppercase tracking-widest">Ultimate Finance Hub</p>
-                    <input type="text" placeholder="Full Name" className="w-full p-5 bg-slate-50 border rounded-2xl mb-4 font-bold outline-none focus:border-blue-500" onChange={(e)=>setUser(e.target.value)} />
-                    <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-lg">START SESSION</button>
+                    <h1 className="text-5xl font-black text-blue-600 italic mb-10 tracking-tighter">FINTRACK</h1>
+                    <input type="text" placeholder="Enter Name" className="w-full p-5 bg-slate-50 border rounded-2xl mb-4 font-bold outline-none" onChange={(e)=>setUser(e.target.value)} />
+                    <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-lg">START</button>
                 </div>
             );
 
             return (
                 <div className="min-h-screen max-w-md mx-auto pb-32">
-                    <header className="p-6 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-20">
-                        <div><h2 className="text-xl font-black text-blue-600 italic leading-none">FINTRACK</h2><p className="text-[9px] font-bold opacity-30 uppercase tracking-widest">{user}</p></div>
-                        <select className="bg-slate-100 px-3 py-1 rounded-lg font-bold text-xs outline-none" value={currency} onChange={(e)=>setCurrency(e.target.value)}>
-                            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                    <header className="p-6 flex justify-between items-center">
+                        <div><h2 className="text-xl font-black text-blue-600 italic">FINTRACK</h2><p className="text-[10px] font-bold opacity-30 uppercase">{user}</p></div>
+                        <div className="opacity-20"><Icon name="shield" size={20}/></div>
                     </header>
 
                     <main className="p-6">
                         {tab === 'home' && (
                             <div className="space-y-6">
                                 {bearOn && (
-                                    <div className="text-center relative py-2">
-                                        <span className="text-5xl">🐻</span>
-                                        {stats.bal < 0 ? <span className="absolute top-0 right-[40%] text-xl">💢</span> : stats.inc >= goal ? <span className="absolute -top-2 left-[42%] text-2xl">👑</span> : <span className="absolute bottom-1 right-[40%] text-xl">💼</span>}
+                                    <div className="text-center">
+                                        <div className="bear-static">🐻
+                                            {bal < 0 ? <span className="bear-badge top-0 right-0">💢</span> : tIn >= goal ? <span className="bear-badge -top-2 left-4">👑</span> : <span className="bear-badge bottom-0 right-0">💼</span>}
+                                        </div>
                                     </div>
                                 )}
-                                <div className="ui-card p-10 text-center shadow-sm">
-                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest mb-1">Available Balance</p>
-                                    <h3 className="text-4xl font-black">{currency} {stats.bal.toLocaleString()}</h3>
+                                <div className="ui-card p-10 text-center">
+                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest mb-1">Total Balance</p>
+                                    <h3 className="text-4xl font-black tracking-tighter">Rs {bal.toLocaleString()}</h3>
                                 </div>
                                 <div className="space-y-3">
-                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest ml-1">Recent Activity</p>
-                                    {logs.map(l => (
-                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center transition-all active:scale-95">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] font-bold opacity-30 uppercase">Recent Logs</p>
+                                        <button onClick={exportPDF} className="text-[10px] font-bold text-blue-600 flex items-center gap-1 uppercase"><Icon name="download" size={12}/> Export PDF</button>
+                                    </div>
+                                    {logs.length === 0 ? <p className="text-center py-10 opacity-20 italic">No logs yet</p> : logs.map(l => (
+                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2.5 bg-slate-50 text-slate-600 rounded-xl"><Icon name={l.cat.i}/></div>
+                                                <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><Icon name={l.cat.i}/></div>
                                                 <div><p className="font-bold text-sm leading-none mb-1">{l.cat.n}</p><p className="text-[9px] font-bold opacity-30">{l.date} • {l.time}</p></div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className={`font-black ${l.type==='INCOME'?'text-emerald-500':'text-rose-500'}`}>{l.amt}</span>
-                                                <button onClick={()=>{setEditId(l.id); setAmt(l.amt); setType(l.type); setCat(l.cat); setModal(true);}} className="opacity-10 hover:opacity-100"><Icon name="edit-3" size={14}/></button>
-                                            </div>
+                                            <span className={`font-black ${l.type==='INCOME'?'text-green-500':'text-red-500'}`}>{l.amt}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -151,25 +148,14 @@
 
                         {tab === 'stats' && (
                             <div className="space-y-6">
-                                <div className="ui-card p-6">
-                                    <p className="text-[10px] font-bold opacity-30 mb-5 uppercase tracking-widest text-center">Spending Breakdown</p>
-                                    <div className="space-y-5">
-                                        {stats.catData.map(c => (
-                                            <div key={c.id}>
-                                                <div className="flex justify-between text-[11px] font-bold mb-1.5 uppercase tracking-tighter">
-                                                    <span className="flex items-center gap-2"><Icon name={c.i} size={12}/> {c.n}</span>
-                                                    <span>{currency} {c.total.toLocaleString()} ({Math.round(c.percent)}%)</span>
-                                                </div>
-                                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className={`h-full bar-fill ${c.c}`} style={{ width: `${c.percent}%` }}></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                <div className="ui-card p-8 text-center">
+                                    <p className="text-[10px] font-bold opacity-30 mb-4 uppercase text-center tracking-widest">Savings Goal Tracker</p>
+                                    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-2"><div className="h-full bg-blue-600" style={{width:`${Math.min((tIn/goal)*100, 100)}%`}}></div></div>
+                                    <p className="text-[10px] font-bold opacity-30 uppercase">Goal: Rs {goal}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="ui-card p-5 bg-emerald-50/50 border-emerald-100 text-emerald-700"><p className="text-[9px] font-bold uppercase mb-1">Total In</p><p className="text-xl font-black">{currency} {stats.inc}</p></div>
-                                    <div className="ui-card p-5 bg-rose-50/50 border-rose-100 text-rose-700"><p className="text-[9px] font-bold uppercase mb-1">Total Out</p><p className="text-xl font-black">{currency} {stats.exp}</p></div>
+                                    <div className="ui-card p-5"><p className="text-[10px] font-bold opacity-30 mb-1 uppercase tracking-widest">In</p><p className="text-xl font-black text-green-500">{tIn}</p></div>
+                                    <div className="ui-card p-5"><p className="text-[10px] font-bold opacity-30 mb-1 uppercase tracking-widest">Out</p><p className="text-xl font-black text-red-500">{tOut}</p></div>
                                 </div>
                             </div>
                         )}
@@ -177,50 +163,58 @@
                         {tab === 'setup' && (
                             <div className="ui-card p-6 space-y-6">
                                 <div>
-                                    <p className="text-xs font-bold mb-3 opacity-40 uppercase tracking-widest">Preferences</p>
-                                    <button onClick={()=>setBearOn(!bearOn)} className={`w-full p-4 rounded-xl flex justify-between font-bold text-sm items-center ${bearOn ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}`}>MoneBear Mascot {bearOn ? 'Enabled' : 'Disabled'} <Icon name={bearOn ? 'toggle-right' : 'toggle-left'}/></button>
+                                    <p className="text-xs font-bold mb-3 uppercase opacity-40 tracking-widest">Preferences</p>
+                                    <button onClick={()=>setBearOn(!bearOn)} className={`w-full p-4 rounded-xl flex justify-between font-bold text-sm ${bearOn ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-100 text-gray-500'}`}>MoneBear Mascot {bearOn ? 'Active' : 'Disabled'} <Icon name={bearOn ? 'eye' : 'eye-off'}/></button>
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold mb-3 opacity-40 uppercase tracking-widest">Target Monthly Goal</p>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black opacity-30">{currency}</span>
-                                        <input type="number" className="w-full p-4 pl-12 bg-slate-50 border rounded-xl font-black outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} />
-                                    </div>
+                                    <p className="text-xs font-bold mb-3 uppercase opacity-40 tracking-widest">Monthly Target</p>
+                                    <input type="number" className="w-full p-4 bg-slate-50 border rounded-xl font-black outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} />
                                 </div>
                                 <div className="pt-4 border-t space-y-2">
-                                    <button onClick={()=>{if(confirm("Wipe all logs?")){localStorage.clear(); window.location.reload();}}} className="w-full p-4 text-red-500 font-bold text-xs uppercase flex justify-between items-center">Reset Application <Icon name="alert-circle" size={16}/></button>
+                                    <button onClick={()=>setPolicyModal(true)} className="w-full p-4 text-slate-600 font-bold text-xs uppercase flex justify-between items-center bg-slate-50 rounded-xl">Privacy Policy <Icon name="shield-check" size={14}/></button>
+                                    <button onClick={()=>{if(confirm("Wipe all logs?")){localStorage.clear(); window.location.reload();}}} className="w-full p-4 text-red-500 font-bold text-xs uppercase text-center mt-2">Reset Application</button>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    <button onClick={()=>{setEditId(null); setAmt(''); setModal(true);}} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"><Icon name="plus" size={32}/></button>
+                    <button onClick={()=>{setAmt(''); setModal(true);}} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-95 transition-all"><Icon name="plus" size={32}/></button>
                     
                     <nav className="nav-bar h-24 flex justify-around items-center px-6 pb-4 z-40">
-                        <button onClick={()=>setTab('home')} className={`flex flex-col items-center ${tab==='home'?'text-blue-600 font-black':'text-slate-300'}`}><Icon name="layout-grid"/><span className="text-[9px] mt-1">HOME</span></button>
-                        <button onClick={()=>setTab('stats')} className={`flex flex-col items-center ${tab==='stats'?'text-blue-600 font-black':'text-slate-300'}`}><Icon name="activity"/><span className="text-[9px] mt-1">ANALYTICS</span></button>
-                        <button onClick={()=>setTab('setup')} className={`flex flex-col items-center ${tab==='setup'?'text-blue-600 font-black':'text-slate-300'}`}><Icon name="settings-2"/><span className="text-[9px] mt-1">SETUP</span></button>
+                        <button onClick={()=>setTab('home')} className={`flex flex-col items-center ${tab==='home'?'text-blue-600 font-black':'text-gray-300'}`}><Icon name="home"/><span className="text-[9px] mt-1">HOME</span></button>
+                        <button onClick={()=>setTab('stats')} className={`flex flex-col items-center ${tab==='stats'?'text-blue-600 font-black':'text-gray-300'}`}><Icon name="activity"/><span className="text-[9px] mt-1">STATS</span></button>
+                        <button onClick={()=>setTab('setup')} className={`flex flex-col items-center ${tab==='setup'?'text-blue-600 font-black':'text-gray-300'}`}><Icon name="settings-2"/><span className="text-[9px] mt-1">SETUP</span></button>
                     </nav>
 
+                    {/* Entry Modal */}
                     {modal && (
                         <div className="fixed inset-0 z-[100] bg-white p-8 flex flex-col">
-                            <div className="flex bg-slate-100 p-1 rounded-2xl mb-8">
-                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold transition-all ${type==='INCOME'?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>INCOME</button>
-                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold transition-all ${type==='EXPENSE'?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>EXPENSE</button>
+                            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8">
+                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold transition-all ${type==='INCOME'?'bg-blue-600 text-white shadow-md':'text-slate-400'}`}>INCOME</button>
+                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold transition-all ${type==='EXPENSE'?'bg-blue-600 text-white shadow-md':'text-slate-400'}`}>EXPENSE</button>
                             </div>
                             <div className="grid grid-cols-3 gap-2 mb-8">
-                                {CATEGORIES[type].map(c => (
-                                    <button key={c.id} onClick={()=>setCat(c)} className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${cat.id===c.id?'border-blue-600 bg-blue-50 text-blue-600':'border-transparent bg-slate-50 text-slate-300'}`}><Icon name={c.i}/><span className="text-[9px] font-bold uppercase">{c.n}</span></button>
+                                {CATS[type].map(c => (
+                                    <button key={c.id} onClick={()=>setCat(c)} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${cat.id===c.id?'border-blue-600 bg-blue-50 text-blue-600':'border-transparent bg-slate-50 text-slate-300'}`}><Icon name={c.i}/><span className="text-[8px] font-bold uppercase">{c.n}</span></button>
                                 ))}
                             </div>
-                            <div className="flex-1 flex flex-col justify-center">
-                                <div className="text-center">
-                                    <span className="text-3xl font-black opacity-20 mr-2">{currency}</span>
-                                    <input type="number" className="text-7xl font-black text-center outline-none bg-transparent w-full" value={amt} onChange={(e)=>setAmt(e.target.value)} autoFocus placeholder="0" />
-                                </div>
+                            <input type="number" className="w-full text-7xl font-black text-center outline-none bg-transparent mb-12 text-slate-800" value={amt} onChange={(e)=>setAmt(e.target.value)} autoFocus placeholder="0" />
+                            <button onClick={save} className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xl font-black shadow-xl uppercase tracking-widest">Confirm</button>
+                            <button onClick={()=>setModal(false)} className="mt-8 text-slate-300 font-bold text-xs uppercase text-center">Close</button>
+                        </div>
+                    )}
+
+                    {/* Privacy Policy Modal */}
+                    {policyModal && (
+                        <div className="fixed inset-0 z-[110] bg-white p-10 overflow-y-auto">
+                            <h2 className="text-2xl font-black mb-6">Privacy Policy</h2>
+                            <div className="space-y-4 text-sm text-slate-600 leading-relaxed">
+                                <p><strong>1. Data Storage:</strong> FinTrack Pro stores all your financial data <strong>locally</strong> on your device. We do not use cloud servers.</p>
+                                <p><strong>2. Offline Use:</strong> The application works 100% offline. No internet connection is required to manage logs.</p>
+                                <p><strong>3. Data Security:</strong> Your data is as secure as your phone. If you clear app data or lose your phone, logs cannot be recovered.</p>
+                                <p><strong>4. PDF Generation:</strong> Reports are generated on-device using local scripts.</p>
                             </div>
-                            <button onClick={onSave} className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xl font-black shadow-xl uppercase mb-4 tracking-widest">Confirm Entry</button>
-                            <button onClick={()=>setModal(false)} className="text-slate-300 font-bold text-xs uppercase text-center">Dismiss</button>
+                            <button onClick={()=>setPolicyModal(false)} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold mt-10 uppercase tracking-widest">Close</button>
                         </div>
                     )}
                 </div>
