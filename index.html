@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack Pro - Final Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FinTrack Pro - Master Release</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,129 +13,130 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Fredoka:wght@400;600;700&display=swap');
         
-        body { transition: background-color 0.3s, color 0.3s; margin: 0; overflow-x: hidden; }
+        body { transition: all 0.3s ease; margin: 0; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
         .nav-blur { backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); }
-        .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 100; color: #475569; letter-spacing: 2px; }
         
-        /* --- CARTOON THEME ENGINE --- */
-        .theme-toon { font-family: 'Fredoka', sans-serif; background-color: #0f172a !important; color: #f8fafc !important; }
-        .theme-toon .glass-card { background: #1e293b !important; border: 3px solid #334155 !important; border-bottom: 7px solid #334155 !important; border-radius: 1.2rem; transform: rotate(-0.3deg); }
+        /* --- THEME LOGIC --- */
+        .theme-toon { font-family: 'Fredoka', sans-serif; background: #0f172a !important; color: #f8fafc !important; }
+        .theme-toon .glass-card { background: #1e293b !important; border: 3px solid #334155 !important; border-bottom: 7px solid #334155 !important; border-radius: 1.5rem; transform: rotate(-0.2deg); }
         .theme-toon .btn-pop { border-bottom: 5px solid #1e40af !important; transition: all 0.1s; }
         .theme-toon .btn-pop:active { border-bottom-width: 1px !important; transform: translateY(4px); }
         
-        /* --- CLASSIC THEME ENGINE --- */
-        .theme-classic { font-family: 'Inter', sans-serif; }
-        .theme-classic .glass-card { border: 1px solid rgba(156, 163, 175, 0.15); border-radius: 1.5rem; }
+        .theme-classic { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
+        .theme-classic .glass-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         
-        .dropdown-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .dropdown-open { max-height: 400px; }
-        .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes pop { 0% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        .animal-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .dropdown-content { max-height: 0; overflow: hidden; transition: max-height 0.3s; }
+        .dropdown-open { max-height: 300px; }
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-slate-50">
+<body>
     <div id="root"></div>
-    <div class="ad-placeholder">ADVERTISEMENT BANNER SLOT</div>
+    <div style="position: fixed; bottom: 0; width: 100%; height: 60px; background: #000; color: #444; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 100; letter-spacing: 2px;">ADVERTISEMENT SLOT</div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const Icon = ({ name, size = 20, color = "currentColor" }) => {
-            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name, color]);
-            return <i data-lucide={name} style={{ width: size, height: size, color: color }}></i>;
+        const Icon = ({ name, size = 20 }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} style={{ width: size, height: size }}></i>;
         };
 
         const CATS = {
-            INCOME: [{ id: 'salary', title: 'Salary', icon: 'banknote' }, { id: 'business', title: 'Business', icon: 'briefcase' }, { id: 'gift', title: 'Gift', icon: 'gift' }],
-            EXPENSE: [{ id: 'food', title: 'Food', icon: 'utensils' }, { id: 'transport', title: 'Transport', icon: 'car' }, { id: 'rent', title: 'Home', icon: 'home' }, { id: 'health', title: 'Heart', icon: 'heart-pulse' }]
+            INCOME: [{ id: 'salary', title: 'Salary', icon: 'banknote' }, { id: 'gift', title: 'Gift', icon: 'gift' }, { id: 'other', title: 'Extra', icon: 'plus-circle' }],
+            EXPENSE: [{ id: 'food', title: 'Food', icon: 'utensils' }, { id: 'home', title: 'Home', icon: 'home' }, { id: 'fun', title: 'Fun', icon: 'clapperboard' }, { id: 'health', title: 'Health', icon: 'heart-pulse' }]
         };
 
         function App() {
             const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('ft_auth') === 'true');
             const [userName, setUserName] = useState(() => localStorage.getItem('ft_user_name') || '');
-            const [currency, setCurrency] = useState(() => localStorage.getItem('fintrack_curr') || 'Rs');
-            const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('fintrack_theme') !== 'false');
-            const [appTheme, setAppTheme] = useState(() => localStorage.getItem('ft_visual_theme') || 'classic');
-            const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('fintrack_logs')) || []);
+            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_curr') || 'Rs');
+            const [appTheme, setAppTheme] = useState(() => localStorage.getItem('ft_visual') || 'toon');
+            const [incomeGoal, setIncomeGoal] = useState(() => Number(localStorage.getItem('ft_goal')) || 50000);
+            const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('ft_logs')) || []);
             
             const [tab, setTab] = useState('dashboard');
-            const [showAddPage, setShowAddPage] = useState(false);
-            const [showPrivacy, setShowPrivacy] = useState(false);
+            const [showAdd, setShowAdd] = useState(false);
             const [isCurrOpen, setIsCurrOpen] = useState(false);
-            const [editingId, setEditingId] = useState(null);
             const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
             const [selectedCat, setSelectedCat] = useState(CATS.EXPENSE[0]);
 
             useEffect(() => {
-                localStorage.setItem('fintrack_logs', JSON.stringify(transactions));
-                localStorage.setItem('fintrack_curr', currency);
-                localStorage.setItem('fintrack_theme', isDarkMode);
-                localStorage.setItem('ft_user_name', userName);
                 localStorage.setItem('ft_auth', isLoggedIn);
-                localStorage.setItem('ft_visual_theme', appTheme);
-            }, [transactions, currency, isDarkMode, isLoggedIn, userName, appTheme]);
+                localStorage.setItem('ft_user_name', userName);
+                localStorage.setItem('ft_curr', currency);
+                localStorage.setItem('ft_visual', appTheme);
+                localStorage.setItem('ft_goal', incomeGoal);
+                localStorage.setItem('ft_logs', JSON.stringify(transactions));
+            }, [isLoggedIn, userName, currency, appTheme, incomeGoal, transactions]);
 
-            const currentMonthYear = new Date().getMonth() + "-" + new Date().getFullYear();
-            const monthlyIncome = transactions.filter(t => t.monthKey === currentMonthYear && t.type === 'INCOME').reduce((acc, t) => acc + Number(t.amount), 0);
-            const monthlyExpense = transactions.filter(t => t.monthKey === currentMonthYear && t.type === 'EXPENSE').reduce((acc, t) => acc + Number(t.amount), 0);
-            const totalBalance = transactions.reduce((acc, t) => t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
+            const totalInc = transactions.filter(t => t.type === 'INCOME').reduce((a, b) => a + Number(b.amount), 0);
+            const totalExp = transactions.filter(t => t.type === 'EXPENSE').reduce((a, b) => a + Number(b.amount), 0);
+            const balance = totalInc - totalExp;
+            const progress = Math.min((totalInc / incomeGoal) * 100, 100);
 
-            const isToon = appTheme === 'toon';
-            const themeClass = isToon ? "theme-toon" : "theme-classic";
-            const bgMain = isToon ? "bg-slate-950" : (isDarkMode ? "bg-black text-white" : "bg-slate-50 text-slate-900");
-            const cardStyle = isToon ? "bg-slate-900" : (isDarkMode ? "bg-slate-900/50" : "bg-white");
+            const getBuddy = () => {
+                if (balance < 0) return { e: "😿", m: "Out of money, buddy!" };
+                if (progress >= 100) return { e: "🦁", m: "Goal Smashed! King!" };
+                if (balance > 10000) return { e: "🐼", m: "We are doing great!" };
+                return { e: "🐱", m: "Keep tracking, I'm here!" };
+            };
 
             const exportPDF = () => {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                doc.setFontSize(20);
-                doc.text("FinTrack Expense Report", 20, 20);
-                doc.setFontSize(12);
-                doc.text(`User: ${userName} | Balance: ${currency} ${totalBalance}`, 20, 30);
-                transactions.forEach((t, i) => {
-                    doc.text(`${t.fullDate} - ${t.category.title}: ${t.type === 'INCOME' ? '+' : '-'}${t.amount} ${currency}`, 20, 50 + (i * 8));
-                });
-                doc.save(`${userName}_FinTrack.pdf`);
+                doc.text("FinTrack Pro Report", 20, 20);
+                doc.text(`User: ${userName} | Balance: ${currency}${balance}`, 20, 30);
+                transactions.forEach((t, i) => doc.text(`${t.date}: ${t.type} - ${t.amount}`, 20, 50 + (i*10)));
+                doc.save("Report.pdf");
             };
 
             if (!isLoggedIn) {
                 return (
-                    <div className={`min-h-screen flex flex-col justify-center p-8 ${bgMain} ${themeClass} text-center`}>
-                        <h1 className="text-6xl font-black mb-10 text-blue-500 italic animate-pop">FINTRACK</h1>
-                        <input type="text" placeholder="Enter Name" className="w-full bg-slate-800/10 p-5 rounded-2xl outline-none border-2 border-blue-500/20 mb-6 text-center font-bold" value={userName} onChange={(e)=>setUserName(e.target.value)} />
-                        <button onClick={() => userName && setIsLoggedIn(true)} className={`bg-blue-600 p-6 rounded-3xl font-black text-white w-full ${isToon ? 'btn-pop' : 'shadow-lg shadow-blue-500/20'}`}>START NOW</button>
+                    <div className={`min-h-screen flex flex-col justify-center p-8 text-center theme-toon`}>
+                        <div className="text-8xl mb-4 animal-float">🐱</div>
+                        <h1 className="text-4xl font-black text-blue-500 mb-8">FINTRACK BUDDY</h1>
+                        <input type="text" placeholder="Enter Your Name" className="w-full bg-slate-900 p-5 rounded-2xl border-2 border-slate-700 mb-6 text-center text-white" onChange={(e)=>setUserName(e.target.value)} />
+                        <button onClick={() => userName && setIsLoggedIn(true)} className="bg-blue-600 p-6 rounded-3xl font-black text-white w-full btn-pop">START ADVENTURE</button>
                     </div>
                 );
             }
 
             return (
-                <div className={`min-h-screen pb-40 transition-all ${bgMain} ${themeClass}`}>
-                    <div className={`p-6 flex justify-between items-center border-b ${isToon ? 'border-slate-800' : (isDarkMode ? 'border-slate-800' : 'border-slate-200')}`}>
-                        <h1 className="text-xl font-black text-blue-500 italic uppercase">FinTrack</h1>
-                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-blue-500/10 text-blue-500"><Icon name={isDarkMode ? "sun" : "moon"} size={20} /></button>
+                <div className={`min-h-screen pb-40 transition-all theme-${appTheme}`}>
+                    {/* Header */}
+                    <div className="p-6 flex justify-between items-center border-b border-slate-800/20">
+                        <h1 className="text-xl font-black text-blue-500 italic uppercase tracking-tighter">FinTrack</h1>
+                        <div className="flex items-center gap-2 opacity-60"><Icon name="user" size={16} /><span className="text-xs font-bold">{userName}</span></div>
                     </div>
 
                     <div className="p-6">
+                        {/* 1. DASHBOARD */}
                         {tab === 'dashboard' && (
-                            <div className="animate-pop">
-                                <div className={`glass-card p-8 text-center mb-6 ${cardStyle}`}>
-                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Current Balance</p>
-                                    <h2 className="text-4xl font-black">{currency} {totalBalance.toLocaleString()}</h2>
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-4 bg-blue-500/10 p-5 rounded-3xl border-2 border-blue-500/10">
+                                    <div className="text-5xl animal-float">{getBuddy().e}</div>
+                                    <div><p className="text-[10px] font-bold opacity-40 uppercase">My Buddy</p><p className="text-sm font-black text-blue-400">{getBuddy().m}</p></div>
                                 </div>
-                                <div className="space-y-4">
-                                    {transactions.length === 0 && <p className="text-center opacity-20 py-10 italic">No transactions yet...</p>}
+                                <div className="glass-card p-10 text-center">
+                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest mb-1">Total Savings</p>
+                                    <h2 className="text-5xl font-black">{currency} {balance.toLocaleString()}</h2>
+                                </div>
+                                <div className="space-y-3">
+                                    <p className="text-[10px] font-black opacity-30 uppercase ml-2">History</p>
                                     {transactions.map(t => (
-                                        <div key={t.id} className={`glass-card p-4 flex justify-between items-center ${cardStyle}`}>
+                                        <div key={t.id} className="glass-card p-4 flex justify-between items-center">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500 border border-blue-500/10"><Icon name={t.category?.icon} size={22} /></div>
-                                                <div><p className="font-bold text-sm leading-tight">{t.category?.title}</p><p className="text-[9px] opacity-40">{t.fullDate}</p></div>
+                                                <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500"><Icon name={t.category.icon} /></div>
+                                                <div><p className="font-bold text-sm leading-tight">{t.category.title}</p><p className="text-[9px] opacity-40">{t.date}</p></div>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>{t.amount}</span>
-                                                <button onClick={() => {setEditingId(t.id); setAmount(t.amount); setType(t.type); setSelectedCat(t.category); setShowAddPage(true);}} className="opacity-20"><Icon name="edit-2" size={14}/></button>
-                                                <button onClick={() => {if(confirm("Delete?")) setTransactions(transactions.filter(i=>i.id!==t.id))}} className="opacity-20 text-red-500"><Icon name="trash" size={14}/></button>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`font-black ${t.type==='INCOME'?'text-green-500':'text-red-500'}`}>{t.type==='INCOME'?'+':'-'}{t.amount}</span>
+                                                <button onClick={()=>setTransactions(transactions.filter(i=>i.id!==t.id))} className="opacity-20"><Icon name="trash" size={14}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -143,100 +144,83 @@
                             </div>
                         )}
 
+                        {/* 2. ANALYTICS */}
                         {tab === 'analytics' && (
-                            <div className="animate-pop">
-                                <button onClick={exportPDF} className={`w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 mb-8 ${isToon ? 'btn-pop' : ''}`}><Icon name="file-text" /> EXPORT PDF</button>
+                            <div className="space-y-6">
+                                <button onClick={exportPDF} className={`w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 ${appTheme==='toon'?'btn-pop':''}`}><Icon name="file-text" /> EXPORT REPORT</button>
+                                <div className="glass-card p-6">
+                                    <p className="text-xs font-black opacity-40 mb-4">INCOME GOAL ({progress.toFixed(0)}%)</p>
+                                    <div className="w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mb-2">
+                                        <div className="h-full bg-green-500 transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-right opacity-40">Target: {currency}{incomeGoal}</p>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className={`glass-card p-6 ${cardStyle} border-l-4 border-green-500`}>
-                                        <p className="text-[9px] font-bold opacity-40 uppercase mb-1">Monthly Income</p>
-                                        <p className="text-xl font-black text-green-500">{currency}{monthlyIncome}</p>
-                                    </div>
-                                    <div className={`glass-card p-6 ${cardStyle} border-l-4 border-red-500`}>
-                                        <p className="text-[9px] font-bold opacity-40 uppercase mb-1">Monthly Spent</p>
-                                        <p className="text-xl font-black text-red-500">{currency}{monthlyExpense}</p>
-                                    </div>
+                                    <div className="glass-card p-6 border-l-4 border-green-500"><p className="text-[10px] font-bold opacity-30">INCOME</p><p className="text-xl font-black text-green-500">{currency}{totalInc}</p></div>
+                                    <div className="glass-card p-6 border-l-4 border-red-500"><p className="text-[10px] font-bold opacity-30">EXPENSE</p><p className="text-xl font-black text-red-500">{currency}{totalExp}</p></div>
                                 </div>
                             </div>
                         )}
 
+                        {/* 3. SETTINGS */}
                         {tab === 'settings' && (
-                            <div className="space-y-4 animate-pop">
-                                <div className={`glass-card p-6 ${cardStyle}`}>
-                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-4">Choose Visual Style</p>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setAppTheme('classic')} className={`flex-1 p-4 rounded-xl font-bold text-xs border-2 transition-all ${appTheme === 'classic' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-slate-800 opacity-40'}`}>Classic</button>
-                                        <button onClick={() => setAppTheme('toon')} className={`flex-1 p-4 rounded-xl font-bold text-xs border-2 transition-all ${appTheme === 'toon' ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-slate-800 opacity-40'}`}>Toon Blue</button>
+                            <div className="space-y-4">
+                                <div className="glass-card p-6">
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-3">App Style</p>
+                                    <div className="flex gap-2">
+                                        <button onClick={()=>setAppTheme('classic')} className={`flex-1 p-3 rounded-xl font-bold border-2 ${appTheme==='classic'?'border-blue-500 bg-blue-500/10 text-blue-500':'border-slate-800 opacity-40'}`}>Classic</button>
+                                        <button onClick={()=>setAppTheme('toon')} className={`flex-1 p-3 rounded-xl font-bold border-2 ${appTheme==='toon'?'border-blue-500 bg-blue-500/10 text-blue-500':'border-slate-800 opacity-40'}`}>Toon Blue</button>
                                     </div>
                                 </div>
-
-                                <div className={`glass-card p-6 ${cardStyle}`}>
-                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-4">Currency</p>
-                                    <div className={`border-2 rounded-xl ${isToon ? 'border-slate-700' : 'border-slate-200'}`}>
-                                        <button onClick={() => setIsCurrOpen(!isCurrOpen)} className="w-full p-4 flex justify-between items-center font-bold">
-                                            <span>{currency}</span><Icon name="chevron-down" size={16} />
-                                        </button>
-                                        <div className={`dropdown-content ${isCurrOpen ? 'dropdown-open border-t border-slate-700' : ''}`}>
-                                            {['Rs', '$', 'AED', '£', '€'].map(c => (
-                                                <button key={c} onClick={() => { setCurrency(c); setIsCurrOpen(false); }} className="w-full p-4 text-left font-bold opacity-60 hover:text-blue-500 transition-colors">{c}</button>
-                                            ))}
-                                        </div>
+                                <div className="glass-card p-6">
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-3">Monthly Goal ({currency})</p>
+                                    <input type="number" className="w-full bg-slate-800/20 p-4 rounded-xl font-bold border-2 border-slate-700 outline-none focus:border-blue-500" value={incomeGoal} onChange={(e)=>setIncomeGoal(e.target.value)} />
+                                </div>
+                                <div className="glass-card p-2">
+                                    <div className="border-b border-slate-800/10 p-4 flex justify-between items-center" onClick={()=>setIsCurrOpen(!isCurrOpen)}>
+                                        <span className="font-bold text-sm">Currency ({currency})</span><Icon name="chevron-down" size={16}/>
                                     </div>
+                                    <div className={`dropdown-content ${isCurrOpen?'dropdown-open':''} px-4`}>
+                                        {['Rs', '$', '€', 'AED'].map(c => (
+                                            <button key={c} onClick={()=>{setCurrency(c); setIsCurrOpen(false)}} className="w-full py-3 text-left opacity-60 font-bold border-b border-slate-800/5">{c}</button>
+                                        ))}
+                                    </div>
+                                    <a href="mailto:fynovostudio@gmail.com?subject=Feedback" className="p-4 flex justify-between items-center border-b border-slate-800/10"><span className="font-bold text-sm">Send Feedback</span><Icon name="message-square" size={16}/></a>
+                                    <button onClick={()=>{localStorage.clear(); window.location.reload()}} className="p-4 w-full flex justify-between items-center text-red-500/60"><span className="font-bold text-sm">Wipe All Data</span><Icon name="refresh-ccw" size={16}/></button>
                                 </div>
-
-                                <div className={`glass-card p-2 ${cardStyle}`}>
-                                    <button onClick={() => setShowPrivacy(true)} className="w-full p-4 flex items-center justify-between border-b border-slate-800/10"><div className="flex items-center gap-3"><Icon name="shield" size={18}/><span className="font-bold text-sm">Privacy Policy</span></div><Icon name="chevron-right" size={16} /></button>
-                                    <a href="mailto:fynovostudio@gmail.com?subject=Feedback" className="w-full p-4 flex items-center justify-between border-b border-slate-800/10"><div className="flex items-center gap-3"><Icon name="message-circle" size={18}/><span className="font-bold text-sm">Send Feedback</span></div><Icon name="chevron-right" size={16} /></a>
-                                    <button onClick={() => {if(confirm("Wipe all data?")) {localStorage.clear(); window.location.reload();}}} className="w-full p-4 flex items-center justify-between text-red-500/60 font-bold text-sm"><span>Reset App</span><Icon name="trash-2" size={18}/></button>
-                                </div>
-                                <p className="text-[10px] opacity-20 text-center font-bold">Fynovo Studio • 1.0.0</p>
+                                <p className="text-[10px] opacity-20 text-center font-bold">Fynovo Studio • Version 2.0</p>
                             </div>
                         )}
                     </div>
 
-                    {/* Footer Nav */}
-                    <button onClick={() => {setEditingId(null); setAmount(''); setShowAddPage(true)}} className={`fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center ${isToon ? 'btn-pop' : ''}`}><Icon name="plus" size={32} /></button>
-
-                    <div className={`fixed bottom-[60px] left-0 right-0 h-20 nav-blur flex justify-around items-center z-50 ${isToon || isDarkMode ? 'bg-slate-900/90' : 'bg-white/90'}`}>
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="home" /><span className="text-[9px] mt-1 font-black">HOME</span></button>
-                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center flex-1 ${tab === 'analytics' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="bar-chart-2" /><span className="text-[9px] mt-1 font-black">ANALYTICS</span></button>
-                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="settings" /><span className="text-[9px] mt-1 font-black">SETTINGS</span></button>
+                    {/* Footer Navigation */}
+                    <button onClick={() => setShowAdd(true)} className={`fixed bottom-36 right-6 w-16 h-16 bg-blue-600 text-white rounded-full z-40 flex items-center justify-center shadow-2xl ${appTheme==='toon'?'btn-pop':''}`}><Icon name="plus" size={32} /></button>
+                    <div className="fixed bottom-[60px] left-0 right-0 h-20 nav-blur bg-slate-900/90 flex justify-around items-center z-50">
+                        <button onClick={()=>setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab==='dashboard'?'text-blue-400':'opacity-30'}`}><Icon name="home"/><span className="text-[9px] mt-1 font-bold">BUDDY</span></button>
+                        <button onClick={()=>setTab('analytics')} className={`flex flex-col items-center flex-1 ${tab==='analytics'?'text-blue-400':'opacity-30'}`}><Icon name="bar-chart-2"/><span className="text-[9px] mt-1 font-bold">STATS</span></button>
+                        <button onClick={()=>setTab('settings')} className={`flex flex-col items-center flex-1 ${tab==='settings'?'text-blue-400':'opacity-30'}`}><Icon name="settings"/><span className="text-[9px] mt-1 font-bold">SETUP</span></button>
                     </div>
 
-                    {/* Modals */}
-                    {showPrivacy && (
-                        <div className={`fixed inset-0 z-[200] p-6 flex flex-col ${bgMain} ${themeClass} overflow-y-auto`}>
-                            <h2 className="text-3xl font-black italic mb-6">Privacy Policy</h2>
-                            <div className="space-y-4 opacity-70 text-sm">
-                                <p><strong>1. Local Storage:</strong> Your data never leaves your phone.</p>
-                                <p><strong>2. No Accounts:</strong> We don't track who you are.</p>
-                                <p><strong>3. Support:</strong> Contact fynovostudio@gmail.com for help.</p>
+                    {/* Add Transaction Page */}
+                    {showAdd && (
+                        <div className={`fixed inset-0 z-[110] p-6 flex flex-col theme-toon bg-slate-950`}>
+                            <div className="flex gap-2 mb-8 bg-slate-900 p-1 rounded-2xl border-2 border-slate-800">
+                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold ${type==='INCOME'?'bg-green-600 text-white':'opacity-40'}`}>INCOME</button>
+                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold ${type==='EXPENSE'?'bg-red-600 text-white':'opacity-40'}`}>EXPENSE</button>
                             </div>
-                            <button onClick={() => setShowPrivacy(false)} className={`mt-auto bg-blue-600 p-5 rounded-2xl font-black text-white ${isToon ? 'btn-pop' : ''}`}>GOT IT</button>
-                        </div>
-                    )}
-
-                    {showAddPage && (
-                        <div className={`fixed inset-0 z-[110] p-6 flex flex-col ${bgMain} ${themeClass} animate-pop`}>
-                            <div className="flex gap-2 mb-8 bg-slate-800/10 p-1 rounded-2xl">
-                                <button onClick={() => {setType('INCOME'); setSelectedCat(CATS.INCOME[0])}} className={`flex-1 py-4 rounded-xl font-bold ${type === 'INCOME' ? 'bg-green-600 text-white' : 'opacity-40'}`}>INCOME</button>
-                                <button onClick={() => {setType('EXPENSE'); setSelectedCat(CATS.EXPENSE[0])}} className={`flex-1 py-4 rounded-xl font-bold ${type === 'EXPENSE' ? 'bg-red-600 text-white' : 'opacity-40'}`}>EXPENSE</button>
-                            </div>
-                            <div className="grid grid-cols-4 gap-3 mb-10">
+                            <div className="grid grid-cols-3 gap-3 mb-10">
                                 {CATS[type].map(c => (
-                                    <button key={c.id} onClick={() => setSelectedCat(c)} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 ${selectedCat.id === c.id ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-slate-800 opacity-40'}`}><Icon name={c.icon} size={24} /><span className="text-[8px] font-black uppercase">{c.title}</span></button>
+                                    <button key={c.id} onClick={()=>setSelectedCat(c)} className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 ${selectedCat.id===c.id?'border-blue-500 bg-blue-500/10 text-blue-400':'border-slate-800 opacity-40'}`}><Icon name={c.icon}/><span className="text-[10px] font-bold">{c.title}</span></button>
                                 ))}
                             </div>
-                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-6xl w-full py-4 outline-none text-center font-black mb-10" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
-                            <button onClick={() => {
+                            <input type="number" placeholder="0" className="bg-transparent border-b-4 border-blue-600 text-6xl w-full py-4 outline-none text-center font-black mb-10 text-white" value={amount} onChange={(e)=>setAmount(e.target.value)} autoFocus />
+                            <button onClick={()=>{
                                 if(!amount) return;
-                                const now = new Date();
-                                const monthKey = now.getMonth() + "-" + now.getFullYear();
-                                const fullStamp = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + " • " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                if (editingId) setTransactions(transactions.map(t => t.id === editingId ? { ...t, amount, type, category: selectedCat } : t));
-                                else setTransactions([{ id: Date.now(), amount, type, category: selectedCat, fullDate: fullStamp, monthKey: monthKey }, ...transactions]);
-                                setShowAddPage(false); setAmount('');
-                            }} className={`w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 ${isToon ? 'btn-pop' : ''}`}>SAVE ENTRY</button>
-                            <button onClick={() => setShowAddPage(false)} className="opacity-40 font-bold text-xs text-center w-full">CANCEL</button>
+                                const date = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
+                                setTransactions([{id:Date.now(), amount, type, category:selectedCat, date}, ...transactions]);
+                                setShowAdd(false); setAmount('');
+                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 btn-pop">ADD RECORD</button>
+                            <button onClick={()=>setShowAdd(false)} className="opacity-40 font-bold text-xs text-center w-full">GO BACK</button>
                         </div>
                     )}
                 </div>
