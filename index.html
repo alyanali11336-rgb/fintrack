@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack Pro - Analytics</title>
+    <title>FinTrack Pro - Full Analytics</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,9 +16,8 @@
         .nav-blur { backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); }
         .glass-card { border: 1px solid rgba(156, 163, 175, 0.15); border-radius: 1.5rem; }
         .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 100; color: #475569; letter-spacing: 2px; }
-        .dropdown-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .dropdown-open { max-height: 300px; }
         ::-webkit-scrollbar { display: none; }
+        .progress-bar { transition: width 1s ease-in-out; }
     </style>
 </head>
 <body>
@@ -47,8 +46,6 @@
             
             const [tab, setTab] = useState('dashboard');
             const [showAddPage, setShowAddPage] = useState(false);
-            const [isCurrOpen, setIsCurrOpen] = useState(false);
-            const [editingId, setEditingId] = useState(null);
             const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
             const [selectedCat, setSelectedCat] = useState(CATS.EXPENSE[0]);
@@ -61,20 +58,21 @@
                 localStorage.setItem('ft_auth', isLoggedIn);
             }, [transactions, currency, isDarkMode, isLoggedIn, userName]);
 
-            // Total Balance Calculation
+            // Calculations
+            const currentMonthYear = new Date().getMonth() + "-" + new Date().getFullYear();
+            const monthlyIncome = transactions.filter(t => t.monthKey === currentMonthYear && t.type === 'INCOME').reduce((acc, t) => acc + Number(t.amount), 0);
+            const monthlyExpense = transactions.filter(t => t.monthKey === currentMonthYear && t.type === 'EXPENSE').reduce((acc, t) => acc + Number(t.amount), 0);
             const totalBalance = transactions.reduce((acc, t) => t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
 
-            // --- MONTHLY ANALYTICS LOGIC ---
-            const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
-            const currentMonthYear = new Date().getMonth() + "-" + new Date().getFullYear();
-
-            const monthlyIncome = transactions
-                .filter(t => t.monthKey === currentMonthYear && t.type === 'INCOME')
-                .reduce((acc, t) => acc + Number(t.amount), 0);
-
-            const monthlyExpense = transactions
-                .filter(t => t.monthKey === currentMonthYear && t.type === 'EXPENSE')
-                .reduce((acc, t) => acc + Number(t.amount), 0);
+            // Category Wise Data for Analytics
+            const getCatWiseData = () => {
+                const data = {};
+                transactions.filter(t => t.monthKey === currentMonthYear && t.type === 'EXPENSE').forEach(t => {
+                    data[t.category.title] = (data[t.category.title] || 0) + Number(t.amount);
+                });
+                return data;
+            };
+            const catData = getCatWiseData();
 
             const themeBg = isDarkMode ? "bg-black text-white" : "bg-slate-50 text-slate-900";
             const cardBg = isDarkMode ? "bg-slate-900/50" : "bg-white shadow-md border-slate-200";
@@ -91,91 +89,102 @@
 
             return (
                 <div className={`min-h-screen pb-40 transition-all ${themeBg}`}>
+                    {/* Header */}
                     <div className={`p-6 flex justify-between items-center border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
                         <h1 className="text-xl font-black text-blue-500 italic uppercase">FinTrack</h1>
                         <button onClick={() => setIsDarkMode(!isDarkMode)} className="p-2 rounded-full bg-blue-500/10 text-blue-500"><Icon name={isDarkMode ? "sun" : "moon"} size={20} /></button>
                     </div>
 
                     <div className="p-6">
+                        {/* 1. DASHBOARD TAB */}
                         {tab === 'dashboard' && (
-                            <div>
-                                {/* Overall Balance Card */}
-                                <div className={`glass-card p-8 text-center mb-4 ${cardBg}`}>
-                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Total Balance</p>
+                            <div className="animate-fadeIn">
+                                <div className={`glass-card p-8 text-center mb-6 ${cardBg}`}>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-1">Available Balance</p>
                                     <h2 className="text-4xl font-black">{currency} {totalBalance.toLocaleString()}</h2>
                                 </div>
-
-                                {/* Monthly Siding Summary Feature */}
-                                <div className={`glass-card p-5 mb-8 flex justify-between items-center ${isDarkMode ? 'bg-blue-600/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
-                                    <div className="flex-1 border-r border-blue-500/10 pr-4">
-                                        <p className="text-[8px] font-black text-blue-500 uppercase mb-1">{currentMonthName} Income</p>
-                                        <p className="text-lg font-black text-green-500">+{currency} {monthlyIncome}</p>
-                                    </div>
-                                    <div className="flex-1 pl-4">
-                                        <p className="text-[8px] font-black text-blue-500 uppercase mb-1">{currentMonthName} Spent</p>
-                                        <p className="text-lg font-black text-red-500">-{currency} {monthlyExpense}</p>
-                                    </div>
-                                </div>
-
-                                <p className="text-[10px] font-black opacity-30 uppercase mb-4 ml-2">Recent Activity</p>
+                                <p className="text-[10px] font-black opacity-30 uppercase mb-4 ml-2 italic">Recent Transactions</p>
                                 <div className="space-y-3">
-                                    {transactions.map(t => (
+                                    {transactions.slice(0, 10).map(t => (
                                         <div key={t.id} className={`glass-card p-4 flex justify-between items-center ${cardBg}`}>
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500"><Icon name={t.category?.icon} size={20} /></div>
-                                                <div>
-                                                    <p className="font-bold text-sm leading-tight">{t.category?.title}</p>
-                                                    <p className="text-[9px] opacity-40 font-bold uppercase">{t.fullDate}</p>
-                                                </div>
+                                                <div><p className="font-bold text-sm leading-tight">{t.category?.title}</p><p className="text-[9px] opacity-40 uppercase">{t.fullDate}</p></div>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>{t.amount}</span>
-                                                <button onClick={() => { if(confirm("Delete this entry?")) setTransactions(transactions.filter(i=>i.id!==t.id)) }} className="opacity-20 text-red-500"><Icon name="trash" size={14} /></button>
-                                            </div>
+                                            <span className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>{t.type === 'INCOME' ? '+' : '-'}{t.amount}</span>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         )}
 
-                        {tab === 'settings' && (
-                            <div className="space-y-4">
+                        {/* 2. ANALYTICS TAB */}
+                        {tab === 'analytics' && (
+                            <div className="animate-fadeIn">
+                                <h2 className="text-2xl font-black mb-6">Monthly Insights</h2>
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <div className={`glass-card p-5 ${cardBg} border-l-4 border-l-green-500`}>
+                                        <p className="text-[9px] font-bold opacity-40 uppercase">Monthly Income</p>
+                                        <p className="text-xl font-black text-green-500">{currency} {monthlyIncome}</p>
+                                    </div>
+                                    <div className={`glass-card p-5 ${cardBg} border-l-4 border-l-red-500`}>
+                                        <p className="text-[9px] font-bold opacity-40 uppercase">Monthly Spent</p>
+                                        <p className="text-xl font-black text-red-500">{currency} {monthlyExpense}</p>
+                                    </div>
+                                </div>
+
                                 <div className={`glass-card p-6 ${cardBg}`}>
-                                    <p className="text-center font-black text-blue-500 mb-6 uppercase tracking-widest italic">{userName}'s FinTrack</p>
+                                    <p className="text-xs font-black mb-6 opacity-40 uppercase tracking-widest text-center">Spending by Category</p>
+                                    {Object.keys(catData).length === 0 ? (
+                                        <p className="text-center text-sm opacity-30 py-10 italic">No data for this month</p>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {Object.entries(catData).map(([cat, val]) => (
+                                                <div key={cat}>
+                                                    <div className="flex justify-between text-[10px] font-bold uppercase mb-2">
+                                                        <span>{cat}</span>
+                                                        <span>{currency} {val}</span>
+                                                    </div>
+                                                    <div className="w-full h-2 bg-slate-800/10 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-blue-600 rounded-full progress-bar" style={{ width: `${(val / monthlyExpense) * 100}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. SETTINGS TAB */}
+                        {tab === 'settings' && (
+                            <div className="animate-fadeIn space-y-4">
+                                <div className={`glass-card p-6 ${cardBg}`}>
+                                    <p className="text-xs font-bold opacity-30 mb-6 uppercase tracking-widest text-center italic">User: {userName}</p>
                                     <button onClick={() => {
                                         const { jsPDF } = window.jspdf;
                                         const doc = new jsPDF();
-                                        doc.text(`Report for ${userName}`, 20, 20);
+                                        doc.text(`FinTrack Report: ${userName}`, 20, 20);
                                         transactions.forEach((t, i) => doc.text(`${t.fullDate}: ${t.amount} (${t.type})`, 20, 40 + (i*10)));
                                         doc.save("FinTrack_Report.pdf");
-                                    }} className="w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 mb-6"><Icon name="file-text" size={20} /> GENERATE PDF</button>
-                                    
-                                    <div className="mb-4">
-                                        <div className={`border rounded-xl ${isDarkMode ? 'border-slate-800 bg-black/40' : 'border-slate-200 bg-slate-100'}`}>
-                                            <button onClick={() => setIsCurrOpen(!isCurrOpen)} className="w-full p-4 flex justify-between items-center font-bold">
-                                                <span>Currency: {currency}</span>
-                                                <Icon name={isCurrOpen ? "chevron-up" : "chevron-down"} size={16} />
-                                            </button>
-                                            <div className={`dropdown-content ${isCurrOpen ? 'dropdown-open border-t border-slate-800' : ''}`}>
-                                                {['Rs', '$', 'AED', '£'].map(c => (
-                                                    <button key={c} onClick={() => { setCurrency(c); setIsCurrOpen(false); }} className={`w-full p-4 text-left font-bold ${currency === c ? 'text-blue-500 bg-blue-500/10' : 'opacity-60'}`}>{c}</button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => {localStorage.clear(); window.location.reload();}} className="w-full text-red-500 text-[10px] font-bold uppercase opacity-30 text-center">Reset Profile</button>
+                                    }} className="w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 mb-4 shadow-lg shadow-green-500/20"><Icon name="download" /> DOWNLOAD PDF</button>
+                                    <button onClick={() => {localStorage.clear(); window.location.reload();}} className="w-full text-red-500 text-[10px] font-bold uppercase opacity-30 text-center mt-6">Reset All Data</button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <button onClick={() => setShowAddPage(true)} className="fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center shadow-blue-500/40"><Icon name="plus" size={32} /></button>
+                    {/* Action Button */}
+                    <button onClick={() => setShowAddPage(true)} className="fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center shadow-blue-500/40 transform active:scale-90 transition-transform"><Icon name="plus" size={32} /></button>
 
+                    {/* BOTTOM NAVIGATION */}
                     <div className={`fixed bottom-[60px] left-0 right-0 h-20 nav-blur flex justify-around items-center z-50 ${isDarkMode ? 'bg-black/90' : 'bg-white/90'}`}>
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500 font-bold' : 'opacity-30'}`}><Icon name="grid" /><span className="text-[10px] mt-1 uppercase">Home</span></button>
-                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500 font-bold' : 'opacity-30'}`}><Icon name="settings" /><span className="text-[10px] mt-1 uppercase">Settings</span></button>
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="grid" /><span className="text-[9px] mt-1 font-black">HOME</span></button>
+                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center flex-1 ${tab === 'analytics' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="bar-chart-3" /><span className="text-[9px] mt-1 font-black">ANALYTICS</span></button>
+                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="settings" /><span className="text-[9px] mt-1 font-black">SETTINGS</span></button>
                     </div>
 
+                    {/* ADD TRANSACTION PAGE */}
                     {showAddPage && (
                         <div className={`fixed inset-0 z-[110] p-6 flex flex-col ${themeBg}`}>
                             <div className="flex gap-2 mb-8 bg-slate-800/10 p-1 rounded-2xl">
@@ -193,10 +202,9 @@
                                 const now = new Date();
                                 const monthKey = now.getMonth() + "-" + now.getFullYear();
                                 const fullStamp = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short' }) + " • " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
                                 setTransactions([{ id: Date.now(), amount, type, category: selectedCat, fullDate: fullStamp, monthKey: monthKey }, ...transactions]);
                                 setShowAddPage(false); setAmount('');
-                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 shadow-xl">SAVE ENTRY</button>
+                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4 shadow-xl">SAVE</button>
                             <button onClick={() => setShowAddPage(false)} className="opacity-40 font-bold text-xs text-center w-full uppercase">Cancel</button>
                         </div>
                     )}
