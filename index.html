@@ -3,237 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSpend Elite</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>FinTrack Pro | by Fynovo Studio</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <style>
-        :root {
-            --brand: #6366f1; --brand-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            --bg: #f8fafc; --surface: #ffffff; --surface-lighter: #f1f5f9;
-            --text-primary: #0f172a; --text-secondary: #64748b;
-            --success: #10b981; --danger: #f43f5e; --border: #e2e8f0;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        * { -webkit-tap-highlight-color: transparent; outline: none; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; transition: background 0.4s ease; overflow-x: hidden; margin: 0; }
+        
+        .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+        .dark .ui-card { background: #1e293b !important; border-color: #334155 !important; }
+        .dark .nav-bar { background: #1e293b !important; border-top: 1px solid #334155 !important; }
 
-        /* Dark Mode Overrides */
-        body.dark-mode {
-            --bg: #0f172a; --surface: #1e293b; --surface-lighter: #334155;
-            --text-primary: #f8fafc; --text-secondary: #94a3b8; --border: rgba(255,255,255,0.08);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; transition: background 0.3s ease, color 0.3s ease; }
-
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text-primary); height: 100vh; overflow: hidden; }
-
-        .page { display: none; height: 100vh; overflow-y: auto; padding: 24px 20px 120px; }
-        .page.active { display: block; }
-
-        /* Dashboard & Cards */
-        .dashboard-card { background: var(--brand-gradient); padding: 30px; border-radius: 32px; color: white; margin-bottom: 28px; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2); }
-        .stat-pill { background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); padding: 12px 16px; border-radius: 16px; flex: 1; }
-
-        /* List Items */
-        .tx-card { background: var(--surface); padding: 16px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .tx-icon-box { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--surface-lighter); font-size: 16px; }
-
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: 15px; z-index: 100; }
-        .nav-item { color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; cursor: pointer; }
-        .nav-item.active { color: var(--brand); }
-
-        /* Toggle Switch */
-        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--brand); }
-        input:checked + .slider:before { transform: translateX(20px); }
-
-        .fab { position: fixed; bottom: 95px; right: 24px; width: 60px; height: 60px; background: var(--brand-gradient); border-radius: 20px; color: white; border: none; font-size: 24px; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3); z-index: 99; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); align-items: flex-end; z-index: 1000; }
-        .modal-content { background: var(--surface); width: 100%; padding: 32px 24px; border-radius: 32px 32px 0 0; }
-        input, select { width: 100%; padding: 16px; margin-bottom: 15px; background: var(--surface-lighter); border: 1px solid var(--border); border-radius: 14px; color: var(--text-primary); }
+        .ui-card { background: white; border: 1px solid #f1f5f9; border-radius: 2.5rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; height: 90px; z-index: 50; }
+        
+        .btn-press:active { transform: scale(0.92); opacity: 0.8; }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-animate { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="dark-mode">
+<body class="bg-[#f8fafc] text-[#1e293b]">
+    <div id="root"></div>
 
-    <div id="home" class="page active">
-        <div class="dashboard-card">
-            <small style="opacity:0.8; font-weight:700">TOTAL BALANCE</small>
-            <h1 id="main-balance" style="font-size: 32px; margin: 5px 0 20px 0;">$ 0.00</h1>
-            <div style="display:flex; gap:15px;">
-                <div class="stat-pill">
-                    <small>Income</small><div id="inc-total" style="font-weight:800; color:#34d399">+$0</div>
-                </div>
-                <div class="stat-pill">
-                    <small>Spent</small><div id="exp-total" style="font-weight:800; color:#fb7185">-$0</div>
-                </div>
-            </div>
-        </div>
-        <h3 style="margin-bottom:15px;">Activity</h3>
-        <div id="tx-history"></div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
 
-    <div id="stats" class="page">
-        <h2 style="margin-bottom:20px;">Analytics</h2>
-        <div style="background:var(--surface); padding:25px; border-radius:24px; border:1px solid var(--border);">
-            <canvas id="mainChart"></canvas>
-        </div>
-        <div id="stat-list" style="margin-top:25px"></div>
-    </div>
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
 
-    <div id="settings" class="page">
-        <h2 style="margin-bottom:24px;">Settings</h2>
-        <div class="tx-card">
-            <span>Dark Mode</span>
-            <label class="switch">
-                <input type="checkbox" id="theme-toggle" checked onchange="toggleTheme()">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <div class="tx-card">
-            <span>Currency</span>
-            <select id="cur-select" onchange="changeCurrency()" style="width:auto; margin:0; padding:5px;">
-                <option value="$">USD ($)</option>
-                <option value="Rs">PKR (Rs)</option>
-                <option value="€">EUR (€)</option>
-            </select>
-        </div>
-        <div class="tx-card" onclick="exportToPDF()" style="cursor:pointer">
-            <span>Export Statement (PDF)</span>
-            <i class="fas fa-file-pdf" style="color:#ef4444"></i>
-        </div>
-        <div class="tx-card" onclick="resetAll()" style="color:var(--danger); cursor:pointer">
-            <span>Reset Data</span>
-            <i class="fas fa-trash"></i>
-        </div>
-    </div>
+        const CATEGORIES = {
+            INCOME: [{ id: 'i1', n: 'Salary', i: 'banknote' }, { id: 'i2', n: 'Business', i: 'briefcase' }, { id: 'i3', n: 'Gift', i: 'gift' }],
+            EXPENSE: [{ id: 'e1', n: 'Food', i: 'utensils' }, { id: 'e2', n: 'Fuel', i: 'fuel' }, { id: 'e3', n: 'Bills', i: 'zap' }, { id: 'e4', n: 'Home', i: 'home' }]
+        };
 
-    <button class="fab" onclick="openModal()"><i class="fas fa-plus"></i></button>
-
-    <nav class="bottom-nav">
-        <div class="nav-item active" onclick="nav('home', this)"><i class="fas fa-wallet"></i><span>Vault</span></div>
-        <div class="nav-item" onclick="nav('stats', this)"><i class="fas fa-chart-pie"></i><span>Stats</span></div>
-        <div class="nav-item" onclick="nav('settings', this)"><i class="fas fa-user-gear"></i><span>Options</span></div>
-    </nav>
-
-    <div id="modal" class="modal" onclick="if(event.target == this) closeModal()">
-        <div class="modal-content">
-            <h2 style="margin-bottom:20px; text-align:center;">Add Entry</h2>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <button id="btn-exp" onclick="setType('expense')" style="flex:1; padding:12px; border-radius:12px; border:none; background:var(--brand); color:white; font-weight:700;">Expense</button>
-                <button id="btn-inc" onclick="setType('income')" style="flex:1; padding:12px; border-radius:12px; border:none; background:var(--surface-lighter); color:var(--text-primary);">Income</button>
-            </div>
-            <input type="number" id="amt" placeholder="0.00">
-            <input type="text" id="desc" placeholder="Label">
-            <select id="cat">
-                <option value="Food">Dining & Food</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Bills">Bills & Home</option>
-                <option value="Transport">Transport</option>
-                <option value="Salary">Salary</option>
-            </select>
-            <button onclick="saveTx()" style="width:100%; padding:16px; border:none; border-radius:14px; background:var(--brand-gradient); color:white; font-weight:700;">Confirm</button>
-        </div>
-    </div>
-
-    <script>
-        let db = JSON.parse(localStorage.getItem('elite_pro_v2')) || [];
-        let currency = localStorage.getItem('elite_cur') || '$';
-        let txType = 'expense';
-        let chart = null;
-
-        const icons = { Food: 'fa-utensils', Shopping: 'fa-bag-shopping', Bills: 'fa-house', Transport: 'fa-car', Salary: 'fa-wallet' };
-
-        function nav(page, el) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(page).classList.add('active');
-            el.classList.add('active');
-            if(page === 'stats') renderStats();
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('elite_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-        }
-
-        function setType(t) {
-            txType = t;
-            document.getElementById('btn-exp').style.background = t === 'expense' ? 'var(--brand)' : 'var(--surface-lighter)';
-            document.getElementById('btn-inc').style.background = t === 'income' ? 'var(--brand)' : 'var(--surface-lighter)';
-        }
-
-        function openModal() { document.getElementById('modal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-        function saveTx() {
-            const amt = parseFloat(document.getElementById('amt').value);
-            const desc = document.getElementById('desc').value;
-            if(!amt || !desc) return;
-            db.push({ id: Date.now(), type: txType, amt, desc, cat: document.getElementById('cat').value, date: new Date().toLocaleDateString() });
-            localStorage.setItem('elite_pro_v2', JSON.stringify(db));
-            renderHome(); closeModal();
-        }
-
-        function renderHome() {
-            const list = document.getElementById('tx-history');
-            list.innerHTML = '';
-            let i = 0, e = 0;
-            db.forEach(t => t.type === 'income' ? i += t.amt : e += t.amt);
-            document.getElementById('main-balance').innerText = `${currency} ${(i-e).toLocaleString()}`;
-            document.getElementById('inc-total').innerText = `+${currency}${i}`;
-            document.getElementById('exp-total').innerText = `-${currency}${e}`;
-
-            db.slice().reverse().forEach(t => {
-                list.innerHTML += `
-                    <div class="tx-card">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div class="tx-icon-box"><i class="fas ${icons[t.cat] || 'fa-receipt'}"></i></div>
-                            <div><div style="font-weight:700">${t.desc}</div><small style="color:var(--text-secondary)">${t.cat}</small></div>
-                        </div>
-                        <div style="font-weight:800; color:${t.type === 'income' ? 'var(--success)' : 'var(--text-primary)'}">
-                            ${t.type === 'income' ? '+' : '-'}${currency}${t.amt}
-                        </div>
-                    </div>`;
-            });
-        }
-
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFontSize(20); doc.text("Financial Statement", 14, 22);
-            doc.setFontSize(11); doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+        function App() {
+            const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_fynovo_v1')) || []);
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
+            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
+            const [tab, setTab] = useState('dashboard');
             
-            const tableData = db.map(t => [t.date, t.desc, t.cat, t.type.toUpperCase(), `${currency}${t.amt}`]);
-            doc.autoTable({ head: [['Date', 'Description', 'Category', 'Type', 'Amount']], body: tableData, startY: 40 });
-            doc.save("SmartSpend_Statement.pdf");
+            const [modal, setModal] = useState(false);
+            const [showPrivacy, setShowPrivacy] = useState(false);
+            const [entryType, setEntryType] = useState('EXPENSE');
+            const [selectedCat, setSelectedCat] = useState(CATEGORIES.EXPENSE[0]);
+            const [amount, setAmount] = useState('');
+
+            useEffect(() => {
+                localStorage.setItem('ft_fynovo_v1', JSON.stringify(logs));
+                localStorage.setItem('ft_dark', darkMode);
+                localStorage.setItem('ft_cur', currency);
+                document.documentElement.classList.toggle('dark', darkMode);
+            }, [logs, darkMode, currency]);
+
+            const stats = useMemo(() => {
+                const inc = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + b.amt, 0);
+                const exp = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + b.amt, 0);
+                return { balance: inc - exp, income: inc, expense: exp };
+            }, [logs]);
+
+            const handleSave = () => {
+                const val = parseFloat(amount);
+                if (!val || val <= 0) return;
+                setLogs([{ id: Date.now(), amt: val, type: entryType, cat: selectedCat, date: new Date().toLocaleDateString('en-GB') }, ...logs]);
+                setModal(false);
+                setAmount('');
+            };
+
+            return (
+                <div className="min-h-screen max-w-md mx-auto pb-32 relative bg-[#f8fafc] dark:bg-slate-950">
+                    <header className="p-8 flex justify-between items-center">
+                        <div>
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Fynovo Studio</span>
+                            <h1 className="text-3xl font-[900] italic uppercase">{tab}</h1>
+                        </div>
+                        <button onClick={() => setDarkMode(!darkMode)} className="p-4 rounded-3xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 btn-press">
+                            <Icon name={darkMode ? 'sun' : 'moon'} className="text-blue-500" />
+                        </button>
+                    </header>
+
+                    <main className="px-6 space-y-6">
+                        {tab === 'dashboard' && (
+                            <div className="space-y-6">
+                                <div className="ui-card p-10 bg-slate-900 dark:bg-blue-600 text-white border-none shadow-2xl">
+                                    <p className="text-[11px] font-bold opacity-50 uppercase tracking-widest text-center mb-2">Current Balance</p>
+                                    <h2 className="text-4xl font-black text-center">{currency} {stats.balance.toLocaleString()}</h2>
+                                </div>
+                                <div className="space-y-3">
+                                    {logs.slice(0, 10).map(l => (
+                                        <div key={l.id} className="ui-card p-5 flex justify-between items-center">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${l.type==='INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                                    <Icon name={l.cat.i} size={20} />
+                                                </div>
+                                                <div><p className="font-black text-sm">{l.cat.n}</p><p className="text-[10px] opacity-40">{l.date}</p></div>
+                                            </div>
+                                            <p className={`font-black ${l.type==='INCOME'?'text-emerald-500':'text-rose-500'}`}>{currency} {l.amt}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {tab === 'setup' && (
+                            <div className="space-y-6">
+                                <div className="ui-card p-6 space-y-4">
+                                    <p className="text-[10px] font-black opacity-30 uppercase px-2">Settings & Security</p>
+                                    
+                                    <button onClick={() => setShowPrivacy(true)} className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">
+                                        Privacy Policy <Icon name="shield-check" className="text-blue-600" />
+                                    </button>
+
+                                    <a href="mailto:fynovostudio@gmail.com?subject=Support Request" className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">
+                                        Email Support <Icon name="mail" className="text-blue-600" />
+                                    </a>
+
+                                    <a href="mailto:fynovostudio@gmail.com?subject=App Feedback" className="w-full flex justify-between items-center p-5 bg-slate-50 dark:bg-slate-800 rounded-3xl font-bold text-sm btn-press">
+                                        Send Feedback <Icon name="message-square" className="text-blue-600" />
+                                    </a>
+                                </div>
+
+                                <div className="text-center pt-4">
+                                    <p className="text-[10px] font-black opacity-20 uppercase tracking-[0.3em]">FinTrack Pro v2.0</p>
+                                    <p className="text-[11px] font-black text-blue-600/40 uppercase mt-1 tracking-widest italic">Designed by Fynovo Studio</p>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Action FABs */}
+                    <div className="fixed bottom-28 right-8 flex flex-col gap-4 z-40">
+                        <button onClick={() => { setEntryType('INCOME'); setModal(true); }} className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg btn-press"><Icon name="plus" /></button>
+                        <button onClick={() => { setEntryType('EXPENSE'); setModal(true); }} className="w-16 h-16 bg-rose-500 text-white rounded-3xl flex items-center justify-center shadow-2xl btn-press"><Icon name="minus" /></button>
+                    </div>
+
+                    {/* Modal Entry */}
+                    {modal && (
+                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col modal-animate ${darkMode ? 'bg-slate-950' : 'bg-white'}`}>
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="text-2xl font-black italic uppercase">New Log</h2>
+                                <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={32}/></button>
+                            </div>
+                            <input type="number" inputMode="decimal" value={amount} onChange={(e)=>setAmount(e.target.value)} placeholder="0.00" className="text-7xl font-black text-center bg-transparent w-full outline-none mb-10" autoFocus />
+                            <button onClick={handleSave} className="w-full py-6 bg-blue-600 text-white rounded-[2rem] font-black text-xl shadow-2xl btn-press">SAVE TO LEDGER</button>
+                        </div>
+                    )}
+
+                    {/* Privacy Policy Sheet */}
+                    {showPrivacy && (
+                        <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md p-6 flex items-end">
+                            <div className={`w-full p-10 rounded-[3.5rem] modal-animate ${darkMode?'bg-slate-900 border border-slate-800':'bg-white'}`}>
+                                <h2 className="text-2xl font-black mb-6 italic">Privacy Policy</h2>
+                                <div className="space-y-4 text-[12px] font-bold opacity-60 leading-relaxed uppercase">
+                                    <p>• Your data is 100% offline and stays on this device.</p>
+                                    <p>• Fynovo Studio does not collect or track your financial logs.</p>
+                                    <p>• We value your security above everything else.</p>
+                                </div>
+                                <button onClick={()=>setShowPrivacy(false)} className="w-full mt-10 py-5 bg-blue-600 text-white rounded-3xl font-black uppercase btn-press">I Agree</button>
+                            </div>
+                        </div>
+                    )}
+
+                    <nav className="nav-bar flex justify-around items-center px-10 pb-4">
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center gap-1 transition-all ${tab==='dashboard'?'text-blue-600':'opacity-20'}`}><Icon name="layout-grid"/><span className="text-[9px] font-black uppercase">Dashboard</span></button>
+                        <button onClick={() => setTab('analytics')} className={`flex flex-col items-center gap-1 transition-all ${tab==='analytics'?'text-blue-600':'opacity-20'}`}><Icon name="pie-chart"/><span className="text-[9px] font-black uppercase">Analytics</span></button>
+                        <button onClick={() => setTab('setup')} className={`flex flex-col items-center gap-1 transition-all ${tab==='setup'?'text-blue-600':'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black uppercase">Setup</span></button>
+                    </nav>
+                </div>
+            );
         }
-
-        function renderStats() {
-            const cats = {}; db.filter(t => t.type === 'expense').forEach(t => cats[t.cat] = (cats[t.cat] || 0) + t.amt);
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            if(chart) chart.destroy();
-            chart = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24'], borderWidth: 0 }] },
-                options: { cutout: '80%', plugins: { legend: { display: false } } }
-            });
-            document.getElementById('stat-list').innerHTML = Object.keys(cats).map(k => `<div class="tx-card"><span>${k}</span><b>${currency}${cats[k]}</b></div>`).join('');
-        }
-
-        function changeCurrency() { currency = document.getElementById('cur-select').value; localStorage.setItem('elite_cur', currency); renderHome(); }
-        function resetAll() { if(confirm("Nuke data?")) { localStorage.clear(); location.reload(); } }
-
-        // Initialize theme
-        if(localStorage.getItem('elite_theme') === 'light') {
-            document.body.classList.remove('dark-mode');
-            document.getElementById('theme-toggle').checked = false;
-        }
-
-        renderHome();
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
