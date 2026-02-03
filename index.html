@@ -10,9 +10,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { background-color: #000; color: white; margin: 0; padding-bottom: 70px; font-family: 'Inter', sans-serif; }
-        .glass-card { background: #0F172A; border: 1px solid #1E293B; border-radius: 2rem; }
-        .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #050505; border-top: 1px solid #1E293B; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #334155; }
+        body { background-color: #000; color: white; margin: 0; padding-bottom: 80px; font-family: sans-serif; }
+        .glass-card { background: #0F172A; border: 1px solid #1E293B; border-radius: 1.5rem; }
+        .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #000; border-top: 1px solid #1E293B; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #334155; z-index: 40; }
     </style>
 </head>
 <body>
@@ -24,81 +24,95 @@
 
         function App() {
             const [transactions, setTransactions] = useState([]);
-            const [user, setUser] = useState({ name: 'AALIAN', currency: 'Rs' });
-            const [showSettings, setShowSettings] = useState(false);
+            const [showAdd, setShowAdd] = useState(false);
+            const [amount, setAmount] = useState('');
+            const [type, setType] = useState('EXPENSE');
 
+            // Load Data
             useEffect(() => {
-                const saved = localStorage.getItem('fintrack_data');
+                const saved = localStorage.getItem('fintrack_logs');
                 if (saved) setTransactions(JSON.parse(saved));
             }, []);
 
-            // --- PDF Export Function ---
-            const exportToPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.setFontSize(20);
-                doc.text("FINTRACK TRANSACTION REPORT", 20, 20);
-                doc.setFontSize(12);
-                doc.text(`Operator: ${user.name}`, 20, 30);
-                
-                let y = 50;
-                transactions.forEach((t, i) => {
-                    doc.text(`${t.date} - ${t.cat.title}: ${user.currency} ${t.amount} (${t.type})`, 20, y);
-                    y += 10;
-                });
-                
-                doc.save("FinTrack_Report.pdf");
+            // Save Transaction
+            const saveTransaction = () => {
+                if (!amount) return alert("Please enter amount");
+                const newLog = {
+                    id: Date.now(),
+                    amount: amount,
+                    type: type,
+                    date: new Date().toLocaleDateString()
+                };
+                const updated = [newLog, ...transactions];
+                setTransactions(updated);
+                localStorage.setItem('fintrack_logs', JSON.stringify(updated));
+                setAmount('');
+                setShowAdd(false);
             };
+
+            const total = transactions.reduce((acc, t) => 
+                t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
 
             return (
                 <div className="p-6 max-w-lg mx-auto">
-                    {/* Header */}
                     <div className="flex justify-between items-center mb-8">
-                        <div onClick={() => setShowSettings(true)} className="cursor-pointer p-2 bg-slate-900 rounded-full">
-                            ⚙️
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[8px] text-blue-500 font-bold">OPERATOR: {user.name}</p>
-                            <h2 className="text-xl font-black tracking-widest">FINTRACK</h2>
-                        </div>
+                        <h2 className="text-xl font-black tracking-widest text-blue-500">FINTRACK</h2>
+                        <div className="text-[10px] text-slate-500">EXPENSE MANAGER</div>
                     </div>
 
-                    {/* Main Balance Card */}
-                    <div className="glass-card p-8 mb-10 text-center">
-                        <p className="text-slate-500 text-[10px] mb-4">TOTAL NET WORTH</p>
-                        <h1 className="text-5xl font-black">{user.currency} 0</h1>
-                        <button onClick={exportToPDF} className="mt-6 text-[10px] bg-blue-600 px-4 py-2 rounded-full font-bold">
-                            📥 EXPORT PDF REPORT
-                        </button>
+                    <div className="glass-card p-8 mb-10 text-center border-blue-900/50">
+                        <p className="text-slate-500 text-[10px] mb-2 uppercase tracking-widest">Available Balance</p>
+                        <h1 className={`text-5xl font-black ${total >= 0 ? 'text-white' : 'text-red-500'}`}>
+                            Rs {total}
+                        </h1>
                     </div>
 
-                    {/* Settings Modal */}
-                    {showSettings && (
-                        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
-                            <div className="glass-card w-full p-8 border-blue-500">
-                                <h3 className="text-xl font-black mb-6">SYSTEM SETTINGS</h3>
-                                <label className="text-[10px] text-slate-500 font-bold">OPERATOR NAME</label>
-                                <input 
-                                    className="w-full bg-transparent border-b border-slate-800 py-2 mb-6 outline-none" 
-                                    value={user.name} 
-                                    onChange={(e) => setUser({...user, name: e.target.value.toUpperCase()})}
-                                />
-                                <button 
-                                    onClick={() => setShowSettings(false)}
-                                    className="w-full bg-blue-600 py-4 rounded-xl font-black"
-                                >
-                                    APPLY CHANGES
-                                </button>
+                    {/* Transaction List */}
+                    <div className="space-y-4">
+                        <p className="text-[10px] font-bold text-slate-700 tracking-widest">RECENT LOGS</p>
+                        {transactions.map(t => (
+                            <div key={t.id} className="glass-card p-4 flex justify-between items-center">
+                                <div>
+                                    <p className="text-[10px] text-slate-500">{t.date}</p>
+                                    <p className="font-bold text-sm">{t.type}</p>
+                                </div>
+                                <p className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>
+                                    {t.type === 'INCOME' ? '+' : '-'} {t.amount}
+                                </p>
                             </div>
+                        ))}
+                    </div>
+
+                    {/* ADD MODAL */}
+                    {showAdd && (
+                        <div className="fixed inset-0 bg-black/95 z-50 p-8 flex flex-col justify-center">
+                            <h2 className="text-2xl font-black mb-6 text-center">NEW ENTRY</h2>
+                            
+                            <div className="flex gap-4 mb-6">
+                                <button onClick={() => setType('INCOME')} className={`flex-1 py-3 rounded-xl font-bold ${type === 'INCOME' ? 'bg-green-600' : 'bg-slate-900'}`}>INCOME</button>
+                                <button onClick={() => setType('EXPENSE')} className={`flex-1 py-3 rounded-xl font-bold ${type === 'EXPENSE' ? 'bg-red-600' : 'bg-slate-900'}`}>EXPENSE</button>
+                            </div>
+
+                            <input 
+                                type="number" 
+                                placeholder="ENTER AMOUNT" 
+                                className="w-full bg-transparent border-b-2 border-slate-800 text-4xl py-4 mb-10 outline-none text-center"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                            />
+
+                            <button onClick={saveTransaction} className="w-full bg-blue-600 py-5 rounded-2xl font-black mb-4">CONFIRM</button>
+                            <button onClick={() => setShowAdd(false)} className="text-slate-500 font-bold">CANCEL</button>
                         </div>
                     )}
 
-                    <p className="text-[10px] text-slate-700 font-black mb-4 tracking-widest">TRANSACTION LOGS</p>
-                    <div className="space-y-3 pb-20">
-                        {transactions.length === 0 && <p className="text-center text-slate-800 py-10">NO LOGS FOUND</p>}
-                    </div>
-
-                    <button className="fixed bottom-10 right-10 w-16 h-16 bg-blue-600 rounded-2xl text-4xl shadow-2xl">+</button>
+                    {/* PLUS BUTTON */}
+                    <button 
+                        onClick={() => setShowAdd(true)}
+                        className="fixed bottom-24 right-8 w-16 h-16 bg-blue-600 rounded-full text-4xl font-light shadow-2xl shadow-blue-500/20 z-30"
+                    >
+                        +
+                    </button>
                 </div>
             );
         }
