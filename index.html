@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack Pro - Professional Dropdown</title>
+    <title>FinTrack Pro - Ultimate</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,11 +11,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { transition: background-color 0.3s; margin: 0; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .nav-blur { backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); }
         .glass-card { border: 1px solid rgba(156, 163, 175, 0.15); border-radius: 1.5rem; }
         .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #000; display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 100; color: #475569; letter-spacing: 2px; }
-        /* Dropdown Slide Animation */
         .dropdown-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .dropdown-open { max-height: 300px; }
         ::-webkit-scrollbar { display: none; }
@@ -43,7 +43,7 @@
                 { id: 'food', title: 'Food', icon: 'utensils' },
                 { id: 'transport', title: 'Transport', icon: 'car' },
                 { id: 'rent', title: 'Rent', icon: 'home' },
-                { id: 'health', title: 'Health', icon: 'heart-pulse' }
+                { id: 'health', title: 'Heart', icon: 'heart-pulse' }
             ]
         };
 
@@ -56,7 +56,7 @@
             
             const [tab, setTab] = useState('dashboard');
             const [showAddPage, setShowAddPage] = useState(false);
-            const [isCurrOpen, setIsCurrOpen] = useState(false); // Dropdown State
+            const [isCurrOpen, setIsCurrOpen] = useState(false);
             const [editingId, setEditingId] = useState(null);
             const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
@@ -72,15 +72,34 @@
 
             const total = transactions.reduce((acc, t) => t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
 
+            const confirmDelete = (id) => {
+                if (window.confirm("Kyan aap waqai is entry ko delete karna chahte hain?")) {
+                    setTransactions(transactions.filter(t => t.id !== id));
+                }
+            };
+
+            const exportPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.text("FinTrack Expense Report", 20, 20);
+                doc.text(`User: ${userName} | Balance: ${currency} ${total}`, 20, 30);
+                let y = 50;
+                transactions.forEach((t) => {
+                    doc.text(`${t.date} | ${t.category.title}: ${currency} ${t.amount} [${t.type}]`, 20, y);
+                    y += 10;
+                });
+                doc.save("Report.pdf");
+            };
+
             const themeBg = isDarkMode ? "bg-black text-white" : "bg-slate-50 text-slate-900";
-            const cardBg = isDarkMode ? "bg-slate-900/50" : "bg-white shadow-sm border-slate-200";
+            const cardBg = isDarkMode ? "bg-slate-900/50" : "bg-white shadow-md border-slate-200";
 
             if (!isLoggedIn) {
                 return (
                     <div className={`min-h-screen flex flex-col justify-center p-8 ${themeBg} text-center`}>
-                        <h1 className="text-4xl font-black mb-10 text-blue-500 italic uppercase">FinTrack</h1>
-                        <input type="text" placeholder="Apna Naam Likhein" className="w-full bg-slate-800/50 p-5 rounded-2xl outline-none border border-slate-700 mb-4 text-center" value={userName} onChange={(e)=>setUserName(e.target.value)} />
-                        <button onClick={() => userName && setIsLoggedIn(true)} className="bg-blue-600 p-5 rounded-3xl font-black text-white w-full">SHURU KAREIN</button>
+                        <h1 className="text-5xl font-black mb-10 text-blue-500 italic">FINTRACK</h1>
+                        <input type="text" placeholder="Your Name" className="w-full bg-slate-800/20 p-5 rounded-2xl outline-none border border-slate-700 mb-6 text-center font-bold" value={userName} onChange={(e)=>setUserName(e.target.value)} />
+                        <button onClick={() => userName && setIsLoggedIn(true)} className="bg-blue-600 p-6 rounded-3xl font-black text-white w-full">GET STARTED</button>
                     </div>
                 );
             }
@@ -88,15 +107,15 @@
             return (
                 <div className={`min-h-screen pb-40 transition-all ${themeBg}`}>
                     <div className={`p-6 flex justify-between items-center border-b ${isDarkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-                        <h1 className="text-xl font-black text-blue-500 italic uppercase">FinTrack</h1>
+                        <h1 className="text-xl font-black text-blue-500 italic">FINTRACK</h1>
                         <button onClick={() => setIsDarkMode(!isDarkMode)}><Icon name={isDarkMode ? "sun" : "moon"} size={20} /></button>
                     </div>
 
                     <div className="p-6">
                         {tab === 'dashboard' && (
-                            <div className="animate-fadeIn">
+                            <div>
                                 <div className={`glass-card p-10 text-center mb-8 ${cardBg}`}>
-                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest leading-relaxed">Available Balance</p>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Balance</p>
                                     <h2 className="text-4xl font-black">{currency} {total.toLocaleString()}</h2>
                                 </div>
                                 <div className="space-y-3">
@@ -104,12 +123,12 @@
                                         <div key={t.id} className={`glass-card p-4 flex justify-between items-center ${cardBg}`}>
                                             <div className="flex items-center gap-3">
                                                 <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500"><Icon name={t.category?.icon} size={20} /></div>
-                                                <div><p className="font-bold text-sm leading-tight">{t.category?.title}</p><p className="text-[9px] opacity-40">{t.date}</p></div>
+                                                <div><p className="font-bold text-sm">{t.category?.title}</p><p className="text-[9px] opacity-40">{t.date}</p></div>
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>{t.amount}</span>
-                                                <button onClick={() => {setEditingId(t.id); setAmount(t.amount); setType(t.type); setSelectedCat(t.category); setShowAddPage(true);}} className="opacity-30"><Icon name="edit-2" size={14} /></button>
-                                                <button onClick={() => setTransactions(transactions.filter(i=>i.id!==t.id))} className="opacity-30 text-red-500"><Icon name="trash-2" size={14} /></button>
+                                                <button onClick={() => {setEditingId(t.id); setAmount(t.amount); setType(t.type); setSelectedCat(t.category); setShowAddPage(true);}} className="opacity-20"><Icon name="edit-3" size={14} /></button>
+                                                <button onClick={() => confirmDelete(t.id)} className="opacity-20 text-red-500"><Icon name="trash" size={14} /></button>
                                             </div>
                                         </div>
                                     ))}
@@ -120,54 +139,40 @@
                         {tab === 'settings' && (
                             <div className="space-y-4">
                                 <div className={`glass-card p-6 ${cardBg}`}>
-                                    <p className="text-[10px] font-bold opacity-40 mb-2 uppercase italic">Profile Configuration</p>
-                                    <h3 className="text-lg font-black mb-6">{userName}</h3>
-                                    
-                                    {/* DROPDOWN CURRENCY SELECTOR */}
-                                    <div className="mb-4">
-                                        <label className="text-[10px] font-bold opacity-40 uppercase mb-2 block">App Currency</label>
-                                        <div className={`border rounded-xl ${isDarkMode ? 'border-slate-800 bg-black' : 'border-slate-200 bg-slate-50'}`}>
-                                            <button 
-                                                onClick={() => setIsCurrOpen(!isCurrOpen)}
-                                                className="w-full p-4 flex justify-between items-center font-bold"
-                                            >
-                                                <span>{currency}</span>
+                                    <button onClick={exportPDF} className="w-full bg-green-600 text-white p-5 rounded-2xl font-black flex items-center justify-center gap-3 mb-6 shadow-lg shadow-green-500/20"><Icon name="file-text" size={20} /> PDF REPORT</button>
+                                    <div className="mb-6">
+                                        <div className={`border rounded-xl ${isDarkMode ? 'border-slate-800 bg-black/40' : 'border-slate-200 bg-slate-100'}`}>
+                                            <button onClick={() => setIsCurrOpen(!isCurrOpen)} className="w-full p-4 flex justify-between items-center font-bold">
+                                                <span>Currency: {currency}</span>
                                                 <Icon name={isCurrOpen ? "chevron-up" : "chevron-down"} size={16} />
                                             </button>
                                             <div className={`dropdown-content ${isCurrOpen ? 'dropdown-open border-t border-slate-800' : ''}`}>
                                                 {['Rs', '$', 'AED', '£'].map(c => (
-                                                    <button 
-                                                        key={c} 
-                                                        onClick={() => { setCurrency(c); setIsCurrOpen(false); }}
-                                                        className={`w-full p-4 text-left font-bold transition-colors ${currency === c ? 'text-blue-500 bg-blue-500/10' : 'opacity-60 hover:bg-slate-800/10'}`}
-                                                    >
-                                                        {c}
-                                                    </button>
+                                                    <button key={c} onClick={() => { setCurrency(c); setIsCurrOpen(false); }} className={`w-full p-4 text-left font-bold ${currency === c ? 'text-blue-500 bg-blue-500/10' : 'opacity-60'}`}>{c}</button>
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <button onClick={() => {localStorage.clear(); window.location.reload();}} className="w-full text-red-500 text-[10px] font-bold uppercase mt-4 opacity-40">Wipe All Data</button>
+                                    <button onClick={() => {localStorage.clear(); window.location.reload();}} className="w-full text-red-500 text-[10px] font-bold uppercase opacity-30">Reset All Data</button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <button onClick={() => {setEditingId(null); setAmount(''); setShowAddPage(true)}} className="fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center"><Icon name="plus" size={30} /></button>
+                    <button onClick={() => {setEditingId(null); setAmount(''); setShowAddPage(true)}} className="fixed bottom-40 right-6 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl z-40 flex items-center justify-center"><Icon name="plus" size={32} /></button>
 
                     <div className={`fixed bottom-[60px] left-0 right-0 h-20 nav-blur flex justify-around items-center z-50 ${isDarkMode ? 'bg-black/90' : 'bg-white/90'}`}>
-                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500' : 'opacity-40'}`}><Icon name="layout-dashboard" /><span className="text-[10px] font-bold mt-1 tracking-tighter">DASHBOARD</span></button>
-                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500' : 'opacity-40'}`}><Icon name="settings" /><span className="text-[10px] font-bold mt-1 tracking-tighter">SETTINGS</span></button>
+                        <button onClick={() => setTab('dashboard')} className={`flex flex-col items-center flex-1 ${tab === 'dashboard' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="grid" /><span className="text-[10px] mt-1">HOME</span></button>
+                        <button onClick={() => setTab('settings')} className={`flex flex-col items-center flex-1 ${tab === 'settings' ? 'text-blue-500' : 'opacity-30'}`}><Icon name="settings" /><span className="text-[10px] mt-1">SETTINGS</span></button>
                     </div>
 
                     {showAddPage && (
                         <div className={`fixed inset-0 z-[110] p-6 flex flex-col ${themeBg}`}>
-                            <div className="flex gap-2 mb-8 bg-slate-800/20 p-1 rounded-2xl">
+                            <div className="flex gap-2 mb-8 bg-slate-800/10 p-1 rounded-2xl">
                                 <button onClick={() => {setType('INCOME'); setSelectedCat(CATS.INCOME[0])}} className={`flex-1 py-4 rounded-xl font-bold ${type === 'INCOME' ? 'bg-green-600 text-white' : 'opacity-40'}`}>INCOME</button>
                                 <button onClick={() => {setType('EXPENSE'); setSelectedCat(CATS.EXPENSE[0])}} className={`flex-1 py-4 rounded-xl font-bold ${type === 'EXPENSE' ? 'bg-red-600 text-white' : 'opacity-40'}`}>EXPENSE</button>
                             </div>
-                            <div className="grid grid-cols-4 gap-3 mb-10 overflow-y-auto">
+                            <div className="grid grid-cols-4 gap-3 mb-10">
                                 {CATS[type].map(c => (
                                     <button key={c.id} onClick={() => setSelectedCat(c)} className={`p-4 rounded-2xl border flex flex-col items-center gap-2 ${selectedCat.id === c.id ? 'border-blue-500 bg-blue-500/10 text-blue-500' : 'border-slate-800 opacity-40'}`}><Icon name={c.icon} size={24} /><span className="text-[8px] font-black uppercase">{c.title}</span></button>
                                 ))}
@@ -178,8 +183,8 @@
                                 if (editingId) setTransactions(transactions.map(t => t.id === editingId ? { ...t, amount, type, category: selectedCat } : t));
                                 else setTransactions([{ id: Date.now(), amount, type, category: selectedCat, date: new Date().toLocaleDateString() }, ...transactions]);
                                 setShowAddPage(false);
-                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4">SAVE ENTRY</button>
-                            <button onClick={() => setShowAddPage(false)} className="opacity-40 font-bold text-xs text-center w-full uppercase">Go Back</button>
+                            }} className="w-full bg-blue-600 py-6 rounded-3xl font-black text-xl mb-4">SAVE</button>
+                            <button onClick={() => setShowAddPage(false)} className="opacity-40 font-bold text-xs text-center w-full uppercase">Cancel</button>
                         </div>
                     )}
                 </div>
