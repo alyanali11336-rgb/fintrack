@@ -10,224 +10,126 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; margin: 0; }
-        .ui-card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; }
-        .nav-bar { background: white; border-top: 1px solid #e2e8f0; position: fixed; bottom: 0; width: 100%; max-width: 448px; }
-        .bear-static { font-size: 50px; position: relative; display: inline-block; }
-        .bear-badge { position: absolute; font-size: 20px; }
-        ::-webkit-scrollbar { display: none; }
+        body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
+        .dark { background-color: #0f1115; color: white; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; border-top: 1px solid rgba(0,0,0,0.05); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body>
+<body class="bg-[#f8fafc] text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useMemo } = React;
 
         const Icon = ({ name, size = 18 }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
             return <i data-lucide={name} style={{ width: size, height: size }}></i>;
         };
 
-        const CATS = {
-            INCOME: [
-                { id: 'i1', n: 'Salary', i: 'banknote' },
-                { id: 'i2', n: 'Business', i: 'briefcase' },
-                { id: 'i3', n: 'Other', i: 'plus-circle' }
-            ],
-            EXPENSE: [
-                { id: 'e1', n: 'Food', i: 'utensils' },
-                { id: 'e2', n: 'Health', i: 'heart-pulse' },
-                { id: 'e3', n: 'Shopping', i: 'shopping-bag' },
-                { id: 'e4', n: 'Travel', i: 'car' },
-                { id: 'e5', n: 'Bills', i: 'zap' },
-                { id: 'e6', n: 'Education', i: 'book' }
-            ]
-        };
-
-        const CURRENCIES = ['AED', 'Rs', '₹', '$', '€', '£'];
-
         function App() {
-            const [user, setUser] = useState(() => localStorage.getItem('ft_u') || '');
-            const [isAuth, setIsAuth] = useState(() => !!localStorage.getItem('ft_u'));
-            const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
-            const [bearOn, setBearOn] = useState(() => localStorage.getItem('ft_b') === 'true');
+            // States
             const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_l')) || []);
-            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_g')) || 5000);
-            
             const [tab, setTab] = useState('home');
             const [modal, setModal] = useState(false);
-            const [policyModal, setPolicyModal] = useState(false);
-            const [amt, setAmt] = useState('');
-            const [type, setType] = useState('EXPENSE');
-            const [cat, setCat] = useState(CATS.EXPENSE[0]);
+            const [showAd, setShowAd] = useState(false);
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
 
-            useEffect(() => {
-                localStorage.setItem('ft_u', user);
-                localStorage.setItem('ft_cur', currency);
-                localStorage.setItem('ft_b', bearOn);
-                localStorage.setItem('ft_l', JSON.stringify(logs));
-                localStorage.setItem('ft_g', goal);
-            }, [user, currency, bearOn, logs, goal]);
+            // --- AD LOGIC ---
+            const handlePlusClick = () => {
+                const today = new Date().toLocaleDateString('en-GB');
+                // Aaj kitni entries ho chuki hain?
+                const entriesToday = logs.filter(l => l.date === today).length;
 
-            const tIn = logs.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
-            const tOut = logs.filter(l => l.type === 'EXPENSE').reduce((a, b) => a + Number(b.amt), 0);
-            const bal = tIn - tOut;
+                // Agar 2 entries ho chuki hain (yani ye 3rd click hai), toh AD dikhao
+                if (entriesToday >= 2) {
+                    setShowAd(true);
+                } else {
+                    setModal(true);
+                }
+            };
 
-            const save = () => {
-                if (!amt) return;
+            const closeAdAndOpenModal = () => {
+                setShowAd(false);
+                setModal(true);
+            };
+
+            // Basic Logic (Rest of your app functions...)
+            const saveEntry = (amt) => {
                 const d = new Date();
-                const entry = {
-                    id: Date.now(),
-                    amt: Number(amt), type, cat,
-                    date: d.toLocaleDateString('en-GB'),
-                    time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                };
-                setLogs([entry, ...logs]);
-                setModal(false); setAmt('');
+                const newLog = { id: Date.now(), amt, date: d.toLocaleDateString('en-GB'), type: 'EXPENSE', cat: {n: 'General', i: 'tag'} };
+                setLogs([newLog, ...logs]);
+                setModal(false);
             };
-
-            const exportPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.text(`FinTrack Report: ${user}`, 14, 20);
-                doc.autoTable({
-                    startY: 30,
-                    head: [['Date', 'Time', 'Category', 'Type', `Amount (${currency})`]],
-                    body: logs.map(l => [l.date, l.time, l.cat.n, l.type, l.amt]),
-                });
-                doc.save('FinTrack_Report.pdf');
-            };
-
-            if (!isAuth) return (
-                <div className="min-h-screen bg-white flex flex-col justify-center p-10 max-w-md mx-auto">
-                    <h1 className="text-5xl font-black text-blue-600 italic mb-10 tracking-tighter">FINTRACK</h1>
-                    <input type="text" placeholder="Enter Name" className="w-full p-5 bg-slate-50 border rounded-2xl mb-4 font-bold outline-none" onChange={(e)=>setUser(e.target.value)} />
-                    <button onClick={()=>user && setIsAuth(true)} className="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-lg uppercase">Get Started</button>
-                </div>
-            );
 
             return (
-                <div className="min-h-screen max-w-md mx-auto pb-32">
-                    <header className="p-6 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-20">
-                        <div><h2 className="text-xl font-black text-blue-600 italic">FINTRACK</h2><p className="text-[10px] font-bold opacity-30 uppercase">{user}</p></div>
-                        <select className="bg-slate-100 px-3 py-1 rounded-lg font-bold text-xs outline-none" value={currency} onChange={(e)=>setCurrency(e.target.value)}>
-                            {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
+                <div className={`min-h-screen max-w-md mx-auto pb-32 ${darkMode ? 'dark text-white' : ''}`}>
+                    {/* Header */}
+                    <header className="p-6 flex justify-between items-center">
+                        <h2 className="text-xl font-black text-blue-600 italic">FINTRACK</h2>
+                        <button onClick={() => setDarkMode(!darkMode)} className="p-2 bg-slate-100 dark:bg-zinc-800 rounded-full">
+                            <Icon name={darkMode ? 'sun' : 'moon'} />
+                        </button>
                     </header>
 
-                    <main className="p-6">
-                        {tab === 'home' && (
-                            <div className="space-y-6">
-                                {bearOn && (
-                                    <div className="text-center">
-                                        <div className="bear-static">🐻
-                                            {bal < 0 ? <span className="bear-badge top-0 right-0">💢</span> : tIn >= goal ? <span className="bear-badge -top-2 left-4">👑</span> : <span className="bear-badge bottom-0 right-0">💼</span>}
-                                        </div>
-                                    </div>
-                                )}
-                                <div className="ui-card p-10 text-center shadow-sm">
-                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest mb-1">Total Balance</p>
-                                    <h3 className="text-4xl font-black tracking-tighter">{currency} {bal.toLocaleString()}</h3>
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center px-1">
-                                        <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Recent Activity</p>
-                                        <button onClick={exportPDF} className="text-[10px] font-bold text-blue-600 flex items-center gap-1 uppercase tracking-tighter"><Icon name="download" size={12}/> PDF Report</button>
-                                    </div>
-                                    {logs.length === 0 ? <p className="text-center py-10 opacity-20 italic text-sm">No transactions yet</p> : logs.map(l => (
-                                        <div key={l.id} className="ui-card p-4 flex justify-between items-center">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><Icon name={l.cat.i}/></div>
-                                                <div><p className="font-bold text-sm leading-none mb-1">{l.cat.n}</p><p className="text-[9px] font-bold opacity-30">{l.date} • {l.time}</p></div>
-                                            </div>
-                                            <span className={`font-black ${l.type==='INCOME'?'text-green-500':'text-red-500'}`}>{l.amt}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                    {/* Main Content Placeholder */}
+                    <div className="p-6 text-center opacity-50">
+                        {logs.length} Entries Done Today
+                        <p className="text-[10px] mt-2">Note: 3rd entry onwards, you will see an Ad slot.</p>
+                    </div>
 
-                        {tab === 'stats' && (
-                            <div className="space-y-6">
-                                <div className="ui-card p-8 text-center">
-                                    <p className="text-[10px] font-bold opacity-30 mb-4 uppercase tracking-widest">Saving Goal Progress</p>
-                                    <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-2"><div className="h-full bg-blue-600" style={{width:`${Math.min((tIn/goal)*100, 100)}%`}}></div></div>
-                                    <p className="text-[10px] font-bold opacity-30 uppercase">Target: {currency} {goal}</p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="ui-card p-5"><p className="text-[10px] font-bold opacity-30 mb-1 uppercase tracking-widest">Inflow</p><p className="text-xl font-black text-green-500">{currency} {tIn}</p></div>
-                                    <div className="ui-card p-5"><p className="text-[10px] font-bold opacity-30 mb-1 uppercase tracking-widest">Outflow</p><p className="text-xl font-black text-red-500">{currency} {tOut}</p></div>
-                                </div>
-                            </div>
-                        )}
+                    {/* Plus Button */}
+                    <button 
+                        onClick={handlePlusClick} 
+                        className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40"
+                    >
+                        <Icon name="plus" size={32}/>
+                    </button>
 
-                        {tab === 'setup' && (
-                            <div className="ui-card p-6 space-y-6">
-                                <div>
-                                    <p className="text-xs font-bold mb-3 uppercase opacity-40 tracking-widest">Preferences</p>
-                                    <button onClick={()=>setBearOn(!bearOn)} className={`w-full p-4 rounded-xl flex justify-between font-bold text-sm items-center ${bearOn ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-100 text-slate-500'}`}>MoneBear Mascot {bearOn ? 'Enabled' : 'Disabled'} <Icon name={bearOn ? 'eye' : 'eye-off'}/></button>
-                                </div>
-                                <div>
-                                    <p className="text-xs font-bold mb-3 uppercase opacity-40 tracking-widest">Monthly Goal ({currency})</p>
-                                    <input type="number" className="w-full p-4 bg-slate-50 border rounded-xl font-black outline-none" value={goal} onChange={(e)=>setGoal(e.target.value)} />
-                                </div>
-                                <div className="pt-4 border-t space-y-2">
-                                    <a href="mailto:support@fintrackpro.com?subject=Feedback" className="w-full p-4 text-blue-600 font-bold text-xs uppercase flex justify-between items-center bg-blue-50 rounded-xl">Support & Feedback <Icon name="mail" size={14}/></a>
-                                    <button onClick={()=>setPolicyModal(true)} className="w-full p-4 text-slate-600 font-bold text-xs uppercase flex justify-between items-center bg-slate-50 rounded-xl">Privacy Policy <Icon name="shield-check" size={14}/></button>
-                                    <button onClick={()=>{if(confirm("Wipe all logs?")){localStorage.clear(); window.location.reload();}}} className="w-full p-4 text-red-500 font-bold text-xs uppercase text-center mt-2">Reset Application</button>
-                                </div>
+                    {/* VIDEO AD PLACEHOLDER MODAL */}
+                    {showAd && (
+                        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-6 text-center">
+                            <div className="w-full aspect-video bg-zinc-800 rounded-2xl flex items-center justify-center border border-zinc-700 mb-6 overflow-hidden relative">
+                                <span className="text-zinc-500 font-bold italic">VIDEO AD PLAYING...</span>
+                                {/* Yahan aapka Ad Network Code (Google AdMob etc.) aayega */}
+                                <div className="absolute top-2 right-2 bg-black/50 px-2 py-1 rounded text-[10px] text-white">Sponsored</div>
                             </div>
-                        )}
-                    </main>
-
-                    <button onClick={()=>{setAmt(''); setModal(true);}} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-95 transition-all"><Icon name="plus" size={32}/></button>
-                    
-                    <nav className="nav-bar h-24 flex justify-around items-center px-6 pb-4 z-40">
-                        <button onClick={()=>setTab('home')} className={`flex flex-col items-center ${tab==='home'?'text-blue-600 font-black':'text-slate-300'}`}><Icon name="home"/><span className="text-[9px] mt-1">HOME</span></button>
-                        <button onClick={()=>setTab('stats')} className={`flex flex-col items-center ${tab==='stats'?'text-blue-600 font-black':'text-slate-300'}`}><Icon name="activity"/><span className="text-[9px] mt-1">STATS</span></button>
-                        <button onClick={()=>setTab('setup')} className={`flex flex-col items-center ${tab==='setup'?'text-blue-600 font-black':'text-slate-300'}`}><Icon name="settings-2"/><span className="text-[9px] mt-1">SETUP</span></button>
-                    </nav>
+                            <h3 className="text-white font-black text-xl mb-2">Support FinTrack Pro</h3>
+                            <p className="text-zinc-400 text-sm mb-8">Watch a quick video to unlock more entries for today!</p>
+                            
+                            <button 
+                                onClick={closeAdAndOpenModal}
+                                className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest"
+                            >
+                                Skip & Continue
+                            </button>
+                        </div>
+                    )}
 
                     {/* Entry Modal */}
                     {modal && (
-                        <div className="fixed inset-0 z-[100] bg-white p-8 flex flex-col">
-                            <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-8">
-                                <button onClick={()=>setType('INCOME')} className={`flex-1 py-4 rounded-xl font-bold transition-all ${type==='INCOME'?'bg-blue-600 text-white shadow-md':'text-slate-400'}`}>INCOME</button>
-                                <button onClick={()=>setType('EXPENSE')} className={`flex-1 py-4 rounded-xl font-bold transition-all ${type==='EXPENSE'?'bg-blue-600 text-white shadow-md':'text-slate-400'}`}>EXPENSE</button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 mb-8">
-                                {CATS[type].map(c => (
-                                    <button key={c.id} onClick={()=>setCat(c)} className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${cat.id===c.id?'border-blue-600 bg-blue-50 text-blue-600':'border-transparent bg-slate-50 text-slate-300'}`}><Icon name={c.i}/><span className="text-[8px] font-bold uppercase">{c.n}</span></button>
-                                ))}
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center">
-                                <div className="text-center">
-                                    <span className="text-2xl font-black opacity-20 mr-2 uppercase">{currency}</span>
-                                    <input type="number" className="text-7xl font-black text-center outline-none bg-transparent w-full" value={amt} onChange={(e)=>setAmt(e.target.value)} autoFocus placeholder="0" />
-                                </div>
-                            </div>
-                            <button onClick={save} className="w-full py-5 bg-blue-600 text-white rounded-2xl text-xl font-black shadow-xl uppercase tracking-widest">Confirm</button>
-                            <button onClick={()=>setModal(false)} className="mt-8 text-slate-300 font-bold text-xs uppercase text-center">Cancel</button>
+                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col ${darkMode ? 'bg-zinc-950' : 'bg-white'}`}>
+                            <h2 className="text-2xl font-black mb-10">Add Transaction</h2>
+                            <input 
+                                type="number" 
+                                placeholder="0" 
+                                className="text-6xl font-black text-center bg-transparent outline-none w-full mb-10"
+                                onKeyDown={(e) => e.key === 'Enter' && saveEntry(e.target.value)}
+                                autoFocus
+                            />
+                            <button onClick={() => setModal(false)} className="text-zinc-500 font-bold">Cancel</button>
                         </div>
                     )}
 
-                    {/* Privacy Policy Modal */}
-                    {policyModal && (
-                        <div className="fixed inset-0 z-[110] bg-white p-10 overflow-y-auto">
-                            <h2 className="text-2xl font-black mb-6">Privacy Policy</h2>
-                            <div className="space-y-4 text-sm text-slate-600 leading-relaxed font-medium">
-                                <p><strong>1. Data Storage:</strong> FinTrack Pro stores all your financial data <strong>locally</strong> on your device. We do not use cloud servers.</p>
-                                <p><strong>2. Offline Use:</strong> The application works 100% offline. No internet connection is required to manage logs.</p>
-                                <p><strong>3. Data Security:</strong> Your data is as secure as your phone. If you clear app data or lose your phone, logs cannot be recovered.</p>
-                            </div>
-                            <button onClick={()=>setPolicyModal(false)} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold mt-10 uppercase tracking-widest">Close</button>
-                        </div>
-                    )}
+                    {/* Nav Bar */}
+                    <nav className={`nav-bar h-24 flex justify-around items-center ${darkMode ? 'bg-zinc-900' : 'bg-white'}`}>
+                        <div className="opacity-50 flex flex-col items-center"><Icon name="home"/><span className="text-[9px]">HOME</span></div>
+                        <div className="opacity-50 flex flex-col items-center"><Icon name="activity"/><span className="text-[9px]">STATS</span></div>
+                        <div className="opacity-100 text-blue-600 flex flex-col items-center"><Icon name="settings"/><span className="text-[9px]">SETUP</span></div>
+                    </nav>
                 </div>
             );
         }
