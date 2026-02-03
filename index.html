@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FinTrack Terminal</title>
+    <title>FinTrack - Expense Manager</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        body { background-color: #000; color: white; margin: 0; padding-bottom: 80px; font-family: sans-serif; }
-        .glass-card { background: #0F172A; border: 1px solid #1E293B; border-radius: 1.5rem; }
-        .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #000; border-top: 1px solid #1E293B; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #334155; z-index: 40; }
+        .glass-card { border: 1px solid rgba(156, 163, 175, 0.2); border-radius: 1.5rem; }
+        body { transition: background-color 0.3s, color 0.3s; margin: 0; padding-bottom: 80px; font-family: sans-serif; }
+        .ad-placeholder { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; border-top: 1px solid rgba(156, 163, 175, 0.2); display: flex; align-items: center; justify-content: center; font-size: 10px; z-index: 40; }
     </style>
 </head>
 <body>
@@ -24,25 +23,28 @@
 
         function App() {
             const [transactions, setTransactions] = useState([]);
+            const [showSettings, setShowSettings] = useState(false);
             const [showAdd, setShowAdd] = useState(false);
             const [amount, setAmount] = useState('');
             const [type, setType] = useState('EXPENSE');
+            
+            // Settings State
+            const [currency, setCurrency] = useState('Rs');
+            const [isDarkMode, setIsDarkMode] = useState(true);
 
-            // Load Data
             useEffect(() => {
-                const saved = localStorage.getItem('fintrack_logs');
-                if (saved) setTransactions(JSON.parse(saved));
+                const savedLogs = localStorage.getItem('fintrack_logs');
+                const savedTheme = localStorage.getItem('fintrack_theme');
+                const savedCurrency = localStorage.getItem('fintrack_curr');
+                
+                if (savedLogs) setTransactions(JSON.parse(savedLogs));
+                if (savedTheme) setIsDarkMode(savedTheme === 'true');
+                if (savedCurrency) setCurrency(savedCurrency);
             }, []);
 
-            // Save Transaction
             const saveTransaction = () => {
-                if (!amount) return alert("Please enter amount");
-                const newLog = {
-                    id: Date.now(),
-                    amount: amount,
-                    type: type,
-                    date: new Date().toLocaleDateString()
-                };
+                if (!amount) return;
+                const newLog = { id: Date.now(), amount, type, date: new Date().toLocaleDateString() };
                 const updated = [newLog, ...transactions];
                 setTransactions(updated);
                 localStorage.setItem('fintrack_logs', JSON.stringify(updated));
@@ -50,66 +52,113 @@
                 setShowAdd(false);
             };
 
+            const toggleTheme = () => {
+                const newTheme = !isDarkMode;
+                setIsDarkMode(newTheme);
+                localStorage.setItem('fintrack_theme', newTheme);
+            };
+
+            const changeCurrency = (curr) => {
+                setCurrency(curr);
+                localStorage.setItem('fintrack_curr', curr);
+            };
+
             const total = transactions.reduce((acc, t) => 
                 t.type === 'INCOME' ? acc + Number(t.amount) : acc - Number(t.amount), 0);
 
+            const themeClass = isDarkMode ? "bg-black text-white" : "bg-slate-50 text-slate-900";
+            const cardClass = isDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-white border-slate-200 shadow-sm";
+
             return (
-                <div className="p-6 max-w-lg mx-auto">
+                <div className={`min-h-screen p-6 transition-all ${themeClass}`}>
+                    {/* Header */}
                     <div className="flex justify-between items-center mb-8">
-                        <h2 className="text-xl font-black tracking-widest text-blue-500">FINTRACK</h2>
-                        <div className="text-[10px] text-slate-500">EXPENSE MANAGER</div>
+                        <button onClick={() => setShowSettings(true)} className="text-xl">⚙️</button>
+                        <h2 className="text-xl font-black tracking-widest text-blue-600">FINTRACK</h2>
+                        <div className="w-8"></div>
                     </div>
 
-                    <div className="glass-card p-8 mb-10 text-center border-blue-900/50">
-                        <p className="text-slate-500 text-[10px] mb-2 uppercase tracking-widest">Available Balance</p>
-                        <h1 className={`text-5xl font-black ${total >= 0 ? 'text-white' : 'text-red-500'}`}>
-                            Rs {total}
+                    {/* Balance Card */}
+                    <div className={`glass-card p-8 mb-10 text-center ${cardClass}`}>
+                        <p className="text-slate-500 text-[10px] mb-2 uppercase tracking-widest font-bold">Current Balance</p>
+                        <h1 className={`text-5xl font-black ${total < 0 ? 'text-red-500' : ''}`}>
+                            {currency} {total}
                         </h1>
                     </div>
 
                     {/* Transaction List */}
                     <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-slate-700 tracking-widest">RECENT LOGS</p>
+                        <p className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">Activity Log</p>
                         {transactions.map(t => (
-                            <div key={t.id} className="glass-card p-4 flex justify-between items-center">
+                            <div key={t.id} className={`glass-card p-4 flex justify-between items-center ${cardClass}`}>
                                 <div>
-                                    <p className="text-[10px] text-slate-500">{t.date}</p>
+                                    <p className="text-[10px] opacity-50">{t.date}</p>
                                     <p className="font-bold text-sm">{t.type}</p>
                                 </div>
                                 <p className={`font-black ${t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'}`}>
-                                    {t.type === 'INCOME' ? '+' : '-'} {t.amount}
+                                    {t.type === 'INCOME' ? '+' : '-'} {currency}{t.amount}
                                 </p>
                             </div>
                         ))}
                     </div>
 
-                    {/* ADD MODAL */}
-                    {showAdd && (
-                        <div className="fixed inset-0 bg-black/95 z-50 p-8 flex flex-col justify-center">
-                            <h2 className="text-2xl font-black mb-6 text-center">NEW ENTRY</h2>
-                            
-                            <div className="flex gap-4 mb-6">
-                                <button onClick={() => setType('INCOME')} className={`flex-1 py-3 rounded-xl font-bold ${type === 'INCOME' ? 'bg-green-600' : 'bg-slate-900'}`}>INCOME</button>
-                                <button onClick={() => setType('EXPENSE')} className={`flex-1 py-3 rounded-xl font-bold ${type === 'EXPENSE' ? 'bg-red-600' : 'bg-slate-900'}`}>EXPENSE</button>
+                    {/* Settings Modal */}
+                    {showSettings && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 p-6 flex items-center justify-center">
+                            <div className={`w-full max-w-sm glass-card p-8 ${cardClass}`}>
+                                <h2 className="text-2xl font-black mb-6">SETTINGS</h2>
+                                
+                                <div className="mb-6">
+                                    <p className="text-[10px] font-bold mb-3 opacity-60">APPEARANCE</p>
+                                    <button onClick={toggleTheme} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold">
+                                        {isDarkMode ? '🌞 Switch to Light Mode' : '🌙 Switch to Dark Mode'}
+                                    </button>
+                                </div>
+
+                                <div className="mb-8">
+                                    <p className="text-[10px] font-bold mb-3 opacity-60">CURRENCY</p>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {['Rs', '$', '€'].map(curr => (
+                                            <button 
+                                                key={curr}
+                                                onClick={() => changeCurrency(curr)}
+                                                className={`py-2 rounded-lg border ${currency === curr ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}
+                                            >
+                                                {curr}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button onClick={() => setShowSettings(false)} className="w-full py-3 border border-slate-500 rounded-xl font-bold">CLOSE</button>
                             </div>
-
-                            <input 
-                                type="number" 
-                                placeholder="ENTER AMOUNT" 
-                                className="w-full bg-transparent border-b-2 border-slate-800 text-4xl py-4 mb-10 outline-none text-center"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                            />
-
-                            <button onClick={saveTransaction} className="w-full bg-blue-600 py-5 rounded-2xl font-black mb-4">CONFIRM</button>
-                            <button onClick={() => setShowAdd(false)} className="text-slate-500 font-bold">CANCEL</button>
                         </div>
                     )}
 
-                    {/* PLUS BUTTON */}
+                    {/* Add Modal */}
+                    {showAdd && (
+                        <div className={`fixed inset-0 z-50 p-8 flex flex-col justify-center ${themeClass}`}>
+                            <h2 className="text-2xl font-black mb-6 text-center">NEW ENTRY</h2>
+                            <div className="flex gap-4 mb-6">
+                                <button onClick={() => setType('INCOME')} className={`flex-1 py-3 rounded-xl font-bold ${type === 'INCOME' ? 'bg-green-600 text-white' : 'bg-slate-800'}`}>INCOME</button>
+                                <button onClick={() => setType('EXPENSE')} className={`flex-1 py-3 rounded-xl font-bold ${type === 'EXPENSE' ? 'bg-red-600 text-white' : 'bg-slate-800'}`}>EXPENSE</button>
+                            </div>
+                            <input 
+                                type="number" 
+                                placeholder="0.00" 
+                                className="w-full bg-transparent border-b-2 border-blue-500 text-5xl py-4 mb-10 outline-none text-center"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                autoFocus
+                            />
+                            <button onClick={saveTransaction} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black mb-4 shadow-lg shadow-blue-500/30">CONFIRM</button>
+                            <button onClick={() => setShowAdd(false)} className="opacity-50 font-bold">CANCEL</button>
+                        </div>
+                    )}
+
                     <button 
                         onClick={() => setShowAdd(true)}
-                        className="fixed bottom-24 right-8 w-16 h-16 bg-blue-600 rounded-full text-4xl font-light shadow-2xl shadow-blue-500/20 z-30"
+                        className="fixed bottom-24 right-8 w-16 h-16 bg-blue-600 text-white rounded-full text-4xl shadow-2xl z-30 flex items-center justify-center"
                     >
                         +
                     </button>
