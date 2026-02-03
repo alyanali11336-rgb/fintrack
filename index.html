@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSpend Fixed</title>
+    <title>SmartSpend Pro</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #6366f1; --bg: #f8fafc; --surface: #ffffff;
@@ -12,218 +13,175 @@
             --success: #10b981; --danger: #ef4444; --border: #e2e8f0;
         }
 
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text-main); }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; color: var(--text-main); height: 100vh; overflow: hidden; }
 
-        /* Fixed Top Header */
-        .header {
-            background: var(--surface); padding: 20px; border-bottom: 1px solid var(--border);
-            position: sticky; top: 0; z-index: 100;
-        }
+        /* Navigation Pages */
+        .page { display: none; height: 100vh; overflow-y: auto; padding-bottom: 100px; box-sizing: border-box; }
+        .page.active { display: block; }
 
-        .balance-summary {
-            background: linear-gradient(135deg, #1e293b, #334155);
-            padding: 20px; border-radius: 20px; color: white; margin-bottom: 15px;
-        }
+        /* Header & Tabs */
+        .header { background: var(--surface); padding: 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+        .balance-summary { background: linear-gradient(135deg, #1e293b, #334155); padding: 20px; border-radius: 20px; color: white; margin-bottom: 15px; }
+        .view-switcher { display: flex; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+        .view-btn { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 600; color: var(--text-sub); background: transparent; cursor: pointer; }
+        .view-btn.active { background: var(--surface); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-        /* Segmented Control Fix */
-        .view-switcher {
-            display: flex; background: #f1f5f9; padding: 4px; border-radius: 12px;
-        }
-        .view-btn {
-            flex: 1; padding: 10px; border: none; border-radius: 10px;
-            font-weight: 600; color: var(--text-sub); background: transparent; cursor: pointer;
-        }
-        .view-btn.active {
-            background: var(--surface); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
+        /* Content Areas */
+        .container { padding: 20px; }
+        .card-item { background: var(--surface); padding: 15px; border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 
-        /* List Items */
-        .list-container { padding: 20px; padding-bottom: 100px; }
-        .tx-card {
-            background: var(--surface); padding: 15px; border-radius: 16px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px; border: 1px solid var(--border);
-        }
-        .tx-info { display: flex; align-items: center; gap: 12px; }
-        .tx-icon {
-            width: 40px; height: 40px; border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-        }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 70px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
+        .nav-item { color: var(--text-sub); text-align: center; font-size: 1.2rem; cursor: pointer; flex: 1; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { display: block; font-size: 0.7rem; }
 
-        /* FAB and Modal */
-        .fab {
-            position: fixed; bottom: 30px; right: 20px; width: 56px; height: 56px;
-            background: var(--primary); border-radius: 50%; color: white;
-            border: none; font-size: 24px; box-shadow: 0 4px 12px rgba(99,102,241,0.4);
-        }
+        /* FAB */
+        .fab { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; background: var(--primary); border-radius: 50%; color: white; border: none; font-size: 24px; box-shadow: 0 4px 12px rgba(99,102,241,0.4); z-index: 99; }
+
+        /* Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: flex-end; z-index: 1000; }
         .modal-content { background: var(--surface); width: 100%; padding: 25px; border-radius: 24px 24px 0 0; }
-        .input-group { margin-bottom: 15px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; }
-        
-        .save-btn {
-            width: 100%; padding: 15px; border: none; border-radius: 12px;
-            font-weight: bold; color: white; cursor: pointer;
-        }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--border); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="balance-summary">
-            <small style="opacity: 0.8;">Total Balance</small>
-            <h1 id="total-balance" style="margin: 5px 0;">$0.00</h1>
-            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
-                <span id="header-inc" style="color: var(--success);">+$0</span>
-                <span id="header-exp" style="color: #fca5a5;">-$0</span>
+    <div id="page-wallet" class="page active">
+        <div class="header">
+            <div class="balance-summary">
+                <small>Available Balance</small>
+                <h1 id="total-balance">$0.00</h1>
+            </div>
+            <div class="view-switcher">
+                <button class="view-btn active" onclick="switchView('expense', this)">Expenses</button>
+                <button class="view-btn" onclick="switchView('income', this)">Income</button>
             </div>
         </div>
+        <div class="container" id="tx-list"></div>
+    </div>
 
-        <div class="view-switcher">
-            <button class="view-btn active" onclick="switchView('expense', this)">Expenses</button>
-            <button class="view-btn" onclick="switchView('income', this)">Income</button>
+    <div id="page-stats" class="page">
+        <div class="container">
+            <h2>Analytics</h2>
+            <div style="background:white; padding:15px; border-radius:20px; margin-bottom:20px;">
+                <canvas id="statChart"></canvas>
+            </div>
+            <div id="stat-breakdown"></div>
         </div>
     </div>
 
-    <div class="list-container" id="tx-list">
+    <div id="page-settings" class="page">
+        <div class="container">
+            <h2>Settings</h2>
+            <div class="card-item" onclick="clearData()" style="color:var(--danger)">
+                <span><i class="fas fa-trash-alt"></i> Clear All Data</span>
+                <i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card-item" onclick="exportJSON()">
+                <span><i class="fas fa-file-export"></i> Export JSON</span>
+                <i class="fas fa-download"></i>
+            </div>
+            <p style="text-align:center; color:var(--text-sub); margin-top:20px;">Version 2026.1.0</p>
         </div>
+    </div>
 
     <button class="fab" onclick="openModal()"><i class="fas fa-plus"></i></button>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="navTo('page-wallet', this)"><i class="fas fa-wallet"></i><span>Home</span></div>
+        <div class="nav-item" onclick="navTo('page-stats', this)"><i class="fas fa-chart-pie"></i><span>Stats</span></div>
+        <div class="nav-item" onclick="navTo('page-settings', this)"><i class="fas fa-cog"></i><span>Settings</span></div>
+    </nav>
 
     <div id="modal" class="modal" onclick="if(event.target == this) closeModal()">
         <div class="modal-content">
             <h3 id="modal-title">New Expense</h3>
-            <div class="input-group">
-                <input type="number" id="amt" placeholder="0.00" step="0.01">
-            </div>
-            <div class="input-group">
-                <input type="text" id="desc" placeholder="What was this for?">
-            </div>
-            <div class="input-group">
-                <select id="cat">
-                    <option value="Food">🍔 Food & Dining</option>
-                    <option value="Bills">🧾 Monthly Bills</option>
-                    <option value="Shopping">🛍️ Shopping</option>
-                    <option value="Salary">💰 Salary/Income</option>
-                    <option value="Other">✨ Other</option>
-                </select>
-            </div>
-            <button id="submit-btn" class="save-btn" onclick="addTransaction()" style="background: var(--danger);">Add Expense</button>
+            <input type="number" id="amt" placeholder="Amount">
+            <input type="text" id="desc" placeholder="Label (e.g. Rent)">
+            <select id="cat">
+                <option value="Food">🍔 Food</option>
+                <option value="Salary">💰 Salary</option>
+                <option value="Shopping">🛍️ Shopping</option>
+                <option value="Bills">🧾 Bills</option>
+            </select>
+            <button id="sub-btn" onclick="addTx()" style="width:100%; padding:15px; border:none; border-radius:12px; color:white; font-weight:bold; background:var(--danger)">Save</button>
         </div>
     </div>
 
     <script>
-        let transactions = JSON.parse(localStorage.getItem('smart_wallet_v3')) || [];
-        let currentActiveView = 'expense';
+        let transactions = JSON.parse(localStorage.getItem('smart_pro_v4')) || [];
+        let activeView = 'expense';
+        let myChart = null;
+
+        function navTo(pageId, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            el.classList.add('active');
+            if(pageId === 'page-stats') renderStats();
+        }
 
         function switchView(view, btn) {
-            currentActiveView = view;
+            activeView = view;
             document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            render();
+            renderHome();
         }
 
         function openModal() {
             document.getElementById('modal').style.display = 'flex';
-            const btn = document.getElementById('submit-btn');
-            const title = document.getElementById('modal-title');
-            
-            if (currentActiveView === 'income') {
-                btn.style.background = 'var(--success)';
-                btn.innerText = 'Add Income';
-                title.innerText = 'New Income';
-                document.getElementById('cat').value = 'Salary';
-            } else {
-                btn.style.background = 'var(--danger)';
-                btn.innerText = 'Add Expense';
-                title.innerText = 'New Expense';
-                document.getElementById('cat').value = 'Food';
-            }
+            const btn = document.getElementById('sub-btn');
+            btn.innerText = `Add ${activeView}`;
+            btn.style.background = activeView === 'income' ? 'var(--success)' : 'var(--danger)';
         }
 
-        function closeModal() {
-            document.getElementById('modal').style.display = 'none';
-        }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
-        function addTransaction() {
+        function addTx() {
             const amt = parseFloat(document.getElementById('amt').value);
             const desc = document.getElementById('desc').value;
-            const cat = document.getElementById('cat').value;
-
-            if (!amt || !desc) return alert("Fill all fields");
-
-            transactions.push({
-                id: Date.now(),
-                type: currentActiveView,
-                amt, desc, cat,
-                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            });
-
-            localStorage.setItem('smart_wallet_v3', JSON.stringify(transactions));
+            if(!amt || !desc) return;
+            transactions.push({ id: Date.now(), type: activeView, amt, desc, cat: document.getElementById('cat').value });
+            localStorage.setItem('smart_pro_v4', JSON.stringify(transactions));
             closeModal();
-            render();
-            
-            // Reset fields
-            document.getElementById('amt').value = '';
-            document.getElementById('desc').value = '';
+            renderHome();
         }
 
-        function deleteTx(id) {
-            transactions = transactions.filter(t => t.id !== id);
-            localStorage.setItem('smart_wallet_v3', JSON.stringify(transactions));
-            render();
-        }
-
-        function render() {
+        function renderHome() {
             const list = document.getElementById('tx-list');
             list.innerHTML = '';
+            let total = 0;
+            transactions.forEach(t => total += (t.type === 'income' ? t.amt : -t.amt));
+            document.getElementById('total-balance').innerText = `$${total.toLocaleString()}`;
 
-            let totalInc = 0;
-            let totalExp = 0;
-
-            // Calculate totals
-            transactions.forEach(t => {
-                if (t.type === 'income') totalInc += t.amt;
-                else totalExp += t.amt;
-            });
-
-            document.getElementById('total-balance').innerText = `$${(totalInc - totalExp).toLocaleString()}`;
-            document.getElementById('header-inc').innerText = `+$${totalInc.toLocaleString()}`;
-            document.getElementById('header-exp').innerText = `-$${totalExp.toLocaleString()}`;
-
-            // Filter for current view
-            const filtered = transactions.filter(t => t.type === currentActiveView);
-
-            if (filtered.length === 0) {
-                list.innerHTML = `<div style="text-align:center; color:var(--text-sub); margin-top:40px;">No ${currentActiveView}s yet</div>`;
-                return;
-            }
-
-            filtered.slice().reverse().forEach(tx => {
-                const isInc = tx.type === 'income';
-                list.innerHTML += `
-                    <div class="tx-card">
-                        <div class="tx-info">
-                            <div class="tx-icon" style="background: ${isInc ? '#d1fae5' : '#fee2e2'}; color: ${isInc ? 'var(--success)' : 'var(--danger)'}">
-                                <i class="fas ${isInc ? 'fa-plus' : 'fa-minus'}"></i>
-                            </div>
-                            <div>
-                                <div style="font-weight:600">${tx.desc}</div>
-                                <small style="color:var(--text-sub)">${tx.date} • ${tx.cat}</small>
-                            </div>
-                        </div>
-                        <div style="text-align:right">
-                            <div style="font-weight:700; color: ${isInc ? 'var(--success)' : 'var(--danger)'}">
-                                ${isInc ? '+' : '-'}$${tx.amt.toLocaleString()}
-                            </div>
-                            <small style="color:var(--danger); cursor:pointer" onclick="deleteTx(${tx.id})">Delete</small>
-                        </div>
-                    </div>
-                `;
+            transactions.filter(t => t.type === activeView).slice().reverse().forEach(tx => {
+                list.innerHTML += `<div class="card-item">
+                    <span><b>${tx.desc}</b><br><small>${tx.cat}</small></span>
+                    <b style="color:${tx.type === 'income' ? 'var(--success)' : 'var(--danger)'}">${tx.type === 'income' ? '+' : '-'}$${tx.amt}</b>
+                </div>`;
             });
         }
 
-        render();
+        function renderStats() {
+            const totals = {};
+            transactions.filter(t => t.type === 'expense').forEach(t => totals[t.cat] = (totals[t.cat] || 0) + t.amt);
+            const ctx = document.getElementById('statChart').getContext('2d');
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#ef4444'] }] }
+            });
+            document.getElementById('stat-breakdown').innerHTML = Object.keys(totals).map(k => `<div class="card-item"><span>${k}</span><b>$${totals[k]}</b></div>`).join('');
+        }
+
+        function clearData() { if(confirm("Clear all?")) { localStorage.clear(); location.reload(); } }
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions));
+            const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "data.json"); dl.click();
+        }
+
+        renderHome();
     </script>
 </body>
 </html>
