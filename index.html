@@ -12,13 +12,20 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; transition: all 0.3s ease; }
-        .dark { background-color: #0f1115; color: white; }
-        .ui-card { background: white; border: 1px solid #edf2f7; border-radius: 1.5rem; }
-        .dark .ui-card { background: #161b22; border-color: #2d3748; }
+        body { font-family: 'Inter', sans-serif; transition: background 0.3s ease; }
+        
+        /* Dark Mode Colors */
+        .dark body { background-color: #0f172a; color: #f8fafc; }
+        .dark .ui-card { background: #1e293b; border-color: #334155; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+        .dark .nav-bar { background: #1e293b; border-top-color: #334155; }
+        .dark input, .dark select { background: #334155 !important; color: white !important; border: 1px solid #475569 !important; }
+        .dark .category-btn { background: #334155; border-color: transparent; color: #94a3b8; }
+        .dark .category-btn.active { border-color: #3b82f6; background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+
+        /* General UI */
+        .ui-card { background: white; border: 1px solid #edf2f7; border-radius: 1.5rem; transition: all 0.3s ease; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 448px; border-top: 1px solid #f1f5f9; background: white; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .ad-shimmer { background: linear-gradient(90deg, #1a202c 25%, #2d3748 50%, #1a202c 75%); background-size: 200% 100%; animation: shimmer 2s infinite; }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body class="bg-[#f7f9fc] text-slate-900">
@@ -27,14 +34,27 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        const Icon = ({ name, size = 18 }) => {
+        const Icon = ({ name, size = 18, className = "" }) => {
             useEffect(() => { if (window.lucide) window.lucide.createIcons(); }, [name]);
-            return <i data-lucide={name} style={{ width: size, height: size }}></i>;
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
+
+        const CATS = {
+            INCOME: [
+                { id: 'i1', n: 'Salary', i: 'banknote' },
+                { id: 'i2', n: 'Business', i: 'briefcase' },
+                { id: 'i3', n: 'Freelance', i: 'laptop' }
+            ],
+            EXPENSE: [
+                { id: 'e1', n: 'Food', i: 'utensils' },
+                { id: 'e2', n: 'Transport', i: 'car' },
+                { id: 'e3', n: 'Bills', i: 'zap' },
+                { id: 'e4', n: 'Health', i: 'heart-pulse' }
+            ]
         };
 
         const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        // Generating years from 2024 to 2030
-        const YEARS = Array.from({length: 7}, (_, i) => 2024 + i);
+        const YEARS = [2025, 2026, 2027];
 
         function App() {
             const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('ft_l')) || []);
@@ -43,22 +63,26 @@
             const [showAd, setShowAd] = useState(false);
             const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ft_dark') === 'true');
             const [currency, setCurrency] = useState(() => localStorage.getItem('ft_cur') || 'AED');
+            const [goal, setGoal] = useState(() => Number(localStorage.getItem('ft_g')) || 50000);
             
-            // --- NEW: YEAR & MONTH STATE ---
             const [selMonth, setSelMonth] = useState(new Date().getMonth());
             const [selYear, setSelYear] = useState(new Date().getFullYear());
+            const [entryType, setEntryType] = useState('EXPENSE');
+            const [entryCat, setEntryCat] = useState(CATS.EXPENSE[0]);
+            const [amt, setAmt] = useState('');
 
             useEffect(() => {
                 localStorage.setItem('ft_dark', darkMode);
+                localStorage.setItem('ft_cur', currency);
+                localStorage.setItem('ft_g', goal);
                 localStorage.setItem('ft_l', JSON.stringify(logs));
                 if (darkMode) document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
-            }, [darkMode, logs]);
+            }, [darkMode, currency, goal, logs]);
 
-            // --- FILTERED STATS LOGIC ---
-            const filteredStats = useMemo(() => {
+            const stats = useMemo(() => {
                 const filtered = logs.filter(l => {
-                    const [d, m, y] = l.date.split('/');
+                    const [, m, y] = l.date.split('/');
                     return (parseInt(m) - 1 === selMonth) && (parseInt(y) === selYear);
                 });
                 const inflow = filtered.filter(l => l.type === 'INCOME').reduce((a, b) => a + Number(b.amt), 0);
@@ -68,134 +92,117 @@
 
             const handlePlusClick = () => {
                 const today = new Date().toLocaleDateString('en-GB');
-                const count = logs.filter(l => l.date === today).length;
-                if (count >= 2) setShowAd(true);
+                if (logs.filter(l => l.date === today).length >= 2) setShowAd(true);
                 else setModal(true);
             };
 
-            const saveEntry = (amt, type) => {
+            const saveEntry = () => {
                 if(!amt) return;
-                const d = new Date();
                 const newLog = { 
-                    id: Date.now(), amt, type, 
-                    date: d.toLocaleDateString('en-GB'),
-                    cat: {n: 'General', i: 'tag'} 
+                    id: Date.now(), amt: Number(amt), type: entryType, cat: entryCat,
+                    date: new Date().toLocaleDateString('en-GB')
                 };
                 setLogs([newLog, ...logs]);
-                setModal(false);
+                setModal(false); setAmt('');
             };
 
             return (
-                <div className={`min-h-screen max-w-md mx-auto pb-32 ${darkMode ? 'dark text-white' : ''}`}>
+                <div className="min-h-screen max-w-md mx-auto pb-32">
                     <header className="p-6 flex justify-between items-center">
-                        <h2 className="text-2xl font-black text-blue-600 italic">FINTRACK</h2>
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full bg-slate-100 dark:bg-zinc-800">
-                            <Icon name={darkMode ? 'sun' : 'moon'} />
-                        </button>
+                        <div>
+                            <h2 className="text-2xl font-black text-blue-600 italic tracking-tighter">FINTRACK</h2>
+                            <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">AALIAN</p>
+                        </div>
+                        <select value={currency} onChange={(e)=>setCurrency(e.target.value)} className="p-2 rounded-xl font-bold text-xs outline-none">
+                            {["AED", "Rs", "₹", "$"].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
                     </header>
 
                     <main className="px-6 space-y-6">
                         {tab === 'home' && (
-                            <div className="ui-card p-10 text-center shadow-sm">
-                                <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-2">Overall Balance</p>
-                                <h3 className="text-4xl font-black">{currency} {(filteredStats.inflow - filteredStats.outflow).toLocaleString()}</h3>
+                            <div className="ui-card p-10 text-center shadow-lg">
+                                <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest mb-2">Net Balance</p>
+                                <h3 className="text-4xl font-black">{currency} {(stats.inflow - stats.outflow).toLocaleString()}</h3>
                             </div>
                         )}
 
                         {tab === 'stats' && (
                             <div className="space-y-4">
-                                {/* YEAR & MONTH PICKER */}
                                 <div className="ui-card p-4 space-y-4">
-                                    <div className="flex justify-between items-center px-2">
-                                        <p className="text-[10px] font-black opacity-40 uppercase">Select Period</p>
-                                        <select 
-                                            value={selYear} 
-                                            onChange={(e) => setSelYear(parseInt(e.target.value))}
-                                            className="bg-transparent font-bold text-sm outline-none text-blue-600"
-                                        >
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] font-black opacity-40 uppercase">Timeline</p>
+                                        <select value={selYear} onChange={(e)=>setSelYear(parseInt(e.target.value))} className="bg-transparent font-bold text-xs text-blue-600 outline-none">
                                             {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                                         </select>
                                     </div>
-                                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                    <div className="flex gap-2 overflow-x-auto no-scrollbar">
                                         {MONTHS.map((m, i) => (
-                                            <button 
-                                                key={m} onClick={() => setSelMonth(i)}
-                                                className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex-shrink-0 ${selMonth === i ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-100 text-slate-400 dark:bg-zinc-800'}`}
-                                            >
-                                                {m}
-                                            </button>
+                                            <button key={m} onClick={() => setSelMonth(i)} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all flex-shrink-0 ${selMonth === i ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 opacity-40'}`}>{m}</button>
                                         ))}
                                     </div>
                                 </div>
-
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="ui-card p-6 border-l-4 border-l-emerald-500">
-                                        <p className="text-[10px] font-bold text-emerald-500 uppercase mb-1">Inflow</p>
-                                        <p className="text-xl font-black">{currency} {filteredStats.inflow}</p>
-                                        <p className="text-[8px] opacity-40 mt-1">{MONTHS[selMonth]} {selYear}</p>
-                                    </div>
-                                    <div className="ui-card p-6 border-l-4 border-l-rose-500">
-                                        <p className="text-[10px] font-bold text-rose-500 uppercase mb-1">Outflow</p>
-                                        <p className="text-xl font-black">{currency} {filteredStats.outflow}</p>
-                                        <p className="text-[8px] opacity-40 mt-1">{MONTHS[selMonth]} {selYear}</p>
-                                    </div>
+                                    <div className="ui-card p-6 border-l-4 border-emerald-500"><p className="text-[10px] font-bold text-emerald-500 uppercase">In</p><p className="text-xl font-black">{stats.inflow}</p></div>
+                                    <div className="ui-card p-6 border-l-4 border-rose-500"><p className="text-[10px] font-bold text-rose-500 uppercase">Out</p><p className="text-xl font-black">{stats.outflow}</p></div>
                                 </div>
                             </div>
                         )}
-                        
+
                         {tab === 'setup' && (
-                             <div className="ui-card p-6 space-y-4">
-                                <p className="text-xs font-bold opacity-40 uppercase">Settings</p>
-                                <button onClick={() => setDarkMode(!darkMode)} className="w-full p-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center font-bold text-sm">
-                                    Dark Mode {darkMode ? 'ON' : 'OFF'} <Icon name={darkMode ? 'sun' : 'moon'} />
+                            <div className="ui-card p-6 space-y-5">
+                                <p className="text-[10px] font-bold opacity-40 uppercase tracking-widest">Preferences</p>
+                                <button onClick={() => setDarkMode(!darkMode)} className="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex justify-between items-center font-bold text-sm border border-transparent">
+                                    {darkMode ? 'Light Mode' : 'Dark Mode'} <Icon name={darkMode ? 'sun' : 'moon'} />
                                 </button>
-                                <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-2xl">
-                                    <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Ad Status</p>
-                                    <p className="text-xs opacity-70">Daily free entries: 2 (Used: {logs.filter(l => l.date === new Date().toLocaleDateString('en-GB')).length})</p>
+                                <div>
+                                    <p className="text-[10px] font-bold opacity-40 uppercase mb-2">Monthly Goal ({currency})</p>
+                                    <input type="number" value={goal} onChange={(e)=>setGoal(e.target.value)} className="w-full p-4 rounded-2xl font-black outline-none border-none" />
                                 </div>
+                                <button className="w-full p-4 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex justify-between items-center font-bold text-sm">Support & Feedback <Icon name="mail" /></button>
+                                <button onClick={() => {if(confirm("Wipe data?")){localStorage.clear(); location.reload()}}} className="w-full py-2 text-rose-500 font-bold text-[10px] uppercase tracking-widest">Reset Application</button>
                             </div>
                         )}
                     </main>
 
-                    {/* PLUS BUTTON */}
-                    <button 
-                        onClick={handlePlusClick}
-                        className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"
-                    >
-                        <Icon name="plus" size={32}/>
-                    </button>
+                    <button onClick={handlePlusClick} className="fixed bottom-32 right-6 w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl z-40 active:scale-90 transition-transform"><Icon name="plus" size={32}/></button>
 
-                    {/* VIDEO AD MODAL */}
+                    {/* MODALS */}
                     {showAd && (
-                        <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center p-6">
-                            <div className="w-full aspect-[9/16] ad-shimmer rounded-3xl flex flex-col items-center justify-center border border-white/10 relative">
-                                <Icon name="video" size={40} className="text-white/20 mb-2"/>
-                                <p className="text-white/30 font-black italic text-sm">LOADING VIDEO AD...</p>
-                                <button onClick={() => {setShowAd(false); setModal(true);}} className="absolute top-4 right-4 text-white/40"><Icon name="x"/></button>
+                        <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-center p-8 text-center">
+                            <div className="w-full aspect-[9/16] bg-slate-900 rounded-3xl mb-8 flex flex-col items-center justify-center border border-slate-800 relative">
+                                <Icon name="play" size={48} className="text-blue-500 animate-pulse" />
+                                <p className="text-slate-500 font-bold text-xs mt-4 uppercase">Video Ad Placeholder</p>
+                                <button onClick={() => {setShowAd(false); setModal(true)}} className="absolute top-4 right-4 text-slate-500"><Icon name="x"/></button>
                             </div>
-                            <button onClick={() => {setShowAd(false); setModal(true);}} className="mt-8 w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest">Skip Ad & Continue</button>
+                            <button onClick={() => {setShowAd(false); setModal(true)}} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest">Skip & Continue</button>
                         </div>
                     )}
 
-                    {/* ENTRY MODAL */}
                     {modal && (
-                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col ${darkMode ? 'bg-zinc-950' : 'bg-white'}`}>
-                            <div className="flex justify-between items-center mb-10">
-                                <h2 className="text-2xl font-black italic">ADD ENTRY</h2>
-                                <button onClick={() => setModal(false)} className="opacity-20"><Icon name="x" size={24}/></button>
+                        <div className={`fixed inset-0 z-[100] p-8 flex flex-col ${darkMode ? 'bg-[#0f172a]' : 'bg-white'}`}>
+                            <div className="flex justify-between items-center mb-8">
+                                <h2 className="text-2xl font-black italic uppercase">New Entry</h2>
+                                <button onClick={() => setModal(false)} className="opacity-30"><Icon name="x" size={24}/></button>
                             </div>
-                            <input type="number" id="amtInp" placeholder="0" autoFocus className="text-7xl font-black text-center bg-transparent outline-none mb-10 w-full" />
-                            <div className="grid grid-cols-2 gap-4">
-                                <button onClick={() => saveEntry(document.getElementById('amtInp').value, 'INCOME')} className="py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase">Income</button>
-                                <button onClick={() => saveEntry(document.getElementById('amtInp').value, 'EXPENSE')} className="py-5 bg-rose-500 text-white rounded-2xl font-black uppercase">Expense</button>
+                            <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-6">
+                                <button onClick={() => {setEntryType('INCOME'); setEntryCat(CATS.INCOME[0])}} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase ${entryType==='INCOME'?'bg-blue-600 text-white':'opacity-40'}`}>Income</button>
+                                <button onClick={() => {setEntryType('EXPENSE'); setEntryCat(CATS.EXPENSE[0])}} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase ${entryType==='EXPENSE'?'bg-blue-600 text-white':'opacity-40'}`}>Expense</button>
                             </div>
+                            <div className="grid grid-cols-3 gap-3 mb-8">
+                                {CATS[entryType].map(c => (
+                                    <button key={c.id} onClick={() => setEntryCat(c)} className={`category-btn p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all ${entryCat.id === c.id ? 'active border-blue-600 bg-blue-600/10 text-blue-600' : 'border-transparent opacity-60'}`}>
+                                        <Icon name={c.i}/><span className="text-[10px] font-bold uppercase">{c.n}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <input type="number" value={amt} onChange={(e)=>setAmt(e.target.value)} placeholder="0" autoFocus className="text-7xl font-black text-center bg-transparent outline-none w-full mb-10" />
+                            <button onClick={saveEntry} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xl shadow-2xl">Confirm Log</button>
                         </div>
                     )}
 
-                    {/* NAVIGATION */}
-                    <nav className={`fixed bottom-0 w-full max-w-[448px] h-24 flex justify-around items-center px-6 pb-4 border-t ${darkMode ? 'bg-zinc-900 border-white/5' : 'bg-white border-slate-100'}`}>
+                    <nav className="nav-bar h-24 flex justify-around items-center px-6 pb-4 z-40">
                         <button onClick={() => setTab('home')} className={`flex flex-col items-center ${tab === 'home' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="home"/><span className="text-[9px] font-black mt-1">HOME</span></button>
-                        <button onClick={() => setTab('stats')} className={`flex flex-col items-center ${tab === 'stats' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="activity"/><span className="text-[9px] font-black mt-1 text-center">STATISTICS</span></button>
+                        <button onClick={() => setTab('stats')} className={`flex flex-col items-center ${tab === 'stats' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="activity"/><span className="text-[9px] font-black mt-1">STATS</span></button>
                         <button onClick={() => setTab('setup')} className={`flex flex-col items-center ${tab === 'setup' ? 'text-blue-600' : 'opacity-20'}`}><Icon name="settings-2"/><span className="text-[9px] font-black mt-1">SETUP</span></button>
                     </nav>
                 </div>
