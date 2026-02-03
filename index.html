@@ -5,189 +5,229 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SmartSpend Elite | Fynovo Studio</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --brand: #6366f1; --brand-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            --bg: #0f172a; --surface: #1e293b; --surface-lighter: #334155;
-            --text-primary: #f8fafc; --text-secondary: #94a3b8; --border: rgba(255,255,255,0.08);
+            --brand: #6366f1; --brand-grad: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --bg: #0f172a; --surface: #1e293b; --surface-sub: #334155;
+            --text: #f8fafc; --text-dim: #94a3b8; --success: #10b981; --danger: #f43f5e;
+            --border: rgba(255,255,255,0.08);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background-color: var(--bg); color: var(--text-primary); height: 100vh; overflow: hidden; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-        /* Onboarding Screen */
-        #onboarding {
-            position: fixed; inset: 0; background: var(--bg); z-index: 5000;
-            display: none; flex-direction: column; padding: 40px 24px;
-            animation: fadeIn 0.5s ease;
-        }
+        /* Screens */
+        .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 100px; animation: fadeIn 0.3s ease; }
+        .screen.active { display: block; }
 
-        .welcome-step { text-align: center; margin-bottom: 40px; }
-        .logo-circle { width: 80px; height: 80px; background: var(--brand-gradient); border-radius: 24px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
+        /* Onboarding */
+        #onboarding { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; padding: 40px 24px; text-align: center; }
+        .cur-search { background: var(--surface); border: 1px solid var(--border); padding: 12px; border-radius: 12px; margin: 20px 0; color: white; width: 100%; }
+        .cur-list { flex: 1; overflow-y: auto; text-align: left; }
+        .cur-item { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; cursor: pointer; }
+        .cur-item.selected { background: var(--brand-grad); border-radius: 12px; color: white; }
 
-        .currency-picker-container {
-            background: var(--surface); border-radius: 24px; border: 1px solid var(--border);
-            flex: 1; display: flex; flex-direction: column; overflow: hidden;
-        }
-
-        .search-bar { padding: 16px; border-bottom: 1px solid var(--border); position: relative; }
-        .search-bar i { position: absolute; left: 28px; top: 30px; color: var(--text-secondary); }
-        .search-bar input { width: 100%; padding: 12px 12px 12px 40px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-lighter); color: white; }
-
-        #currency-scroll-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .currency-item { padding: 16px; border-radius: 12px; margin-bottom: 4px; display: flex; justify-content: space-between; cursor: pointer; }
-        .currency-item:active { background: var(--brand); }
-        .currency-item.selected { background: var(--brand-gradient); color: white; }
-
-        /* Main App Pages */
-        .page { display: none; height: 100vh; overflow-y: auto; padding: 24px 20px 120px; }
-        .page.active { display: block; }
-        .dashboard-card { background: var(--brand-gradient); padding: 30px; border-radius: 32px; color: white; margin-bottom: 28px; }
+        /* UI Elements */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 20px; margin-bottom: 16px; }
+        .hero { background: var(--brand-grad); padding: 30px; border-radius: 32px; color: white; box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2); }
+        .btn-prime { background: var(--brand-grad); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 700; width: 100%; cursor: pointer; }
         
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: 15px; }
-        .nav-item { color: var(--text-secondary); text-align: center; font-size: 10px; text-transform: uppercase; font-weight: 700; cursor: pointer; }
-        .nav-item.active { color: var(--brand); }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 5px; }
+        .tx-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .tx-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; margin-right: 12px; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .tx-card { background: var(--surface); padding: 16px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        /* Nav */
+        nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
+        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .nav-link.active { color: var(--brand); }
+        .nav-link i { font-size: 20px; display: block; margin-bottom: 4px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Policy Overlay */
+        .legal-overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 10000; padding: 30px 20px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-    <div id="onboarding">
-        <div class="welcome-step">
-            <div class="logo-circle"><i class="fas fa-vault"></i></div>
-            <h2 style="font-weight: 800;">Welcome to SmartSpend</h2>
-            <p style="color: var(--text-secondary); margin-top: 8px;">Let's set your primary currency to start.</p>
-        </div>
+    <div id="onboarding" style="display: none;">
+        <div style="font-size: 40px; margin-bottom: 15px;">🌍</div>
+        <h2 style="font-weight: 800;">Currency Selection</h2>
+        <p style="color: var(--text-dim); font-size: 14px;">Select your primary currency to continue.</p>
+        <input type="text" id="curSearch" class="cur-search" placeholder="Search (USD, PKR, EUR...)" onkeyup="filterCurrencies()">
+        <div id="curList" class="cur-list"></div>
+        <button class="btn-prime" style="margin-top: 20px;" onclick="saveCurrency()">Save & Start</button>
+    </div>
 
-        <div class="currency-picker-container">
-            <div class="search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" id="currency-search" placeholder="Search currency (e.g. USD, PKR, EUR)" onkeyup="filterCurrencies()">
-            </div>
-            <div id="currency-scroll-list">
+    <div id="home" class="screen active">
+        <div class="hero">
+            <small style="text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Active Balance</small>
+            <h1 id="total-bal" style="font-size: 36px; margin: 5px 0 20px;">$ 0.00</h1>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 15px;">
+                    <small>Income</small><div id="sum-in" style="font-weight: 700; color: var(--success);">+0</div>
                 </div>
+                <div style="flex:1; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 15px;">
+                    <small>Expenses</small><div id="sum-out" style="font-weight: 700; color: var(--danger);">-0</div>
+                </div>
+            </div>
         </div>
-
-        <button onclick="finishOnboarding()" style="width:100%; padding: 18px; border-radius: 18px; border: none; background: var(--brand-gradient); color: white; font-weight: 800; font-size: 16px; margin-top: 20px;">
-            Get Started
-        </button>
+        <h3 style="margin: 25px 0 15px;">Transaction History</h3>
+        <div id="history-list"></div>
     </div>
 
-    <div id="home" class="page">
-        <div class="dashboard-card">
-            <small style="opacity:0.8; font-weight:700">TOTAL BALANCE</small>
-            <h1 id="main-balance" style="font-size: 32px; margin: 10px 0;">--</h1>
-            <div id="comp-label" style="font-size: 12px; opacity: 0.7;">Fynovo Studio Vault</div>
+    <div id="settings" class="screen">
+        <h2 style="margin-bottom: 25px;">App Options</h2>
+        
+        <div class="card">
+            <small style="color: var(--brand); font-weight: 800;">GENERAL</small>
+            <div class="tx-row" onclick="exportPDF()">
+                <span>Generate PDF Report</span>
+                <i class="fas fa-file-pdf" style="color: var(--danger)"></i>
+            </div>
+            <div class="tx-row" onclick="location.reload()">
+                <span>Change Currency</span>
+                <b id="set-cur">USD</b>
+            </div>
         </div>
-        <h3 style="margin-bottom:15px;">Activity</h3>
-        <div id="tx-history"></div>
+
+        <div class="card">
+            <small style="color: var(--brand); font-weight: 800;">LEGAL & SUPPORT</small>
+            <div class="tx-row" onclick="window.location.href='mailto:fynovostudio@gmail.com'">
+                <span>Contact Support</span>
+                <small>fynovostudio@gmail.com</small>
+            </div>
+            <div class="tx-row" onclick="openLegal('policy')">
+                <span>Privacy Policy</span>
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="tx-row" onclick="openLegal('about')">
+                <span>About Fynovo Studio</span>
+                <i class="fas fa-info-circle"></i>
+            </div>
+        </div>
+
+        <div style="text-align: center; opacity: 0.4; font-size: 12px; padding: 20px;">
+            <p>SmartSpend Elite v2.0</p>
+            <p>&copy; 2026 Fynovo Studio. All Rights Reserved.</p>
+        </div>
     </div>
 
-    <div id="settings" class="page">
-        <h2 style="margin-bottom:24px;">Settings</h2>
-        <div class="tx-card">
-            <span>Primary Currency</span>
-            <b id="active-cur-display" style="color: var(--brand)">$</b>
+    <div id="legal-overlay" class="legal-overlay">
+        <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px;" onclick="closeLegal()">
+            <i class="fas fa-arrow-left"></i> <h3 id="legal-title">Policy</h3>
         </div>
-        <div class="tx-card" onclick="localStorage.clear(); location.reload();" style="color: var(--danger)">
-            <span>Reset App Data</span>
-            <i class="fas fa-refresh"></i>
-        </div>
-        <div style="margin-top: 20px; text-align: center; opacity: 0.5; font-size: 12px;">
-            <p>Developer: Fynovo Studio</p>
-            <p>Support: fynovostudio@gmail.com</p>
-        </div>
+        <div id="legal-body" style="line-height: 1.7; color: var(--text-dim);"></div>
     </div>
 
-    <nav class="bottom-nav">
-        <div class="nav-item active" onclick="nav('home', this)"><i class="fas fa-wallet"></i><span>Vault</span></div>
-        <div class="nav-item" onclick="nav('settings', this)"><i class="fas fa-gear"></i><span>Settings</span></div>
+    <nav>
+        <div class="nav-link active" onclick="nav('home', this)"><i class="fas fa-wallet"></i>Vault</div>
+        <div class="nav-link" onclick="nav('settings', this)"><i class="fas fa-user-gear"></i>Settings</div>
     </nav>
 
     <script>
-        // Comprehensive Currency List (ISO 4217)
-        const globalCurrencies = [
-            { code: "USD", symbol: "$", name: "United States Dollar" },
-            { code: "PKR", symbol: "Rs", name: "Pakistani Rupee" },
-            { code: "EUR", symbol: "€", name: "Euro" },
-            { code: "GBP", symbol: "£", name: "British Pound" },
-            { code: "INR", symbol: "₹", name: "Indian Rupee" },
-            { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
-            { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
-            { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-            { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-            { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-            { code: "CNY", symbol: "¥", name: "Chinese Yuan" },
-            { code: "TRY", symbol: "₺", name: "Turkish Lira" },
-            { code: "BRL", symbol: "R$", name: "Brazilian Real" },
-            { code: "NGN", symbol: "₦", name: "Nigerian Naira" },
-            { code: "ZAR", symbol: "R", name: "South African Rand" }
-            // Add more as needed, or fetch from an API in production
+        const currencies = [
+            { code: 'USD', sym: '$', name: 'US Dollar' }, { code: 'PKR', sym: 'Rs', name: 'Pakistani Rupee' },
+            { code: 'EUR', sym: '€', name: 'Euro' }, { code: 'GBP', sym: '£', name: 'British Pound' },
+            { code: 'INR', sym: '₹', name: 'Indian Rupee' }, { code: 'AED', sym: 'د.إ', name: 'UAE Dirham' }
         ];
 
-        let selectedCur = null;
+        let db = JSON.parse(localStorage.getItem('fynovo_db')) || [];
+        let config = JSON.parse(localStorage.getItem('fynovo_config')) || { cur: '$', onboard: false };
+        let selectedCode = 'USD';
 
-        function checkFirstTime() {
-            const hasSet = localStorage.getItem('elite_onboarded');
-            if (!hasSet) {
+        function init() {
+            if (!config.onboard) {
                 document.getElementById('onboarding').style.display = 'flex';
-                renderCurrencyList(globalCurrencies);
+                renderCurList(currencies);
             } else {
-                document.getElementById('home').classList.add('active');
-                renderApp();
+                renderUI();
             }
         }
 
-        function renderCurrencyList(list) {
-            const container = document.getElementById('currency-scroll-list');
-            container.innerHTML = list.map(cur => `
-                <div class="currency-item ${selectedCur?.code === cur.code ? 'selected' : ''}" onclick="selectCurrency('${cur.code}')">
-                    <span>${cur.name} (${cur.code})</span>
-                    <b>${cur.symbol}</b>
+        function renderCurList(list) {
+            document.getElementById('curList').innerHTML = list.map(c => `
+                <div class="cur-item ${selectedCode === c.code ? 'selected' : ''}" onclick="selectCur('${c.code}')">
+                    <span>${c.name} (${c.code})</span><b>${c.sym}</b>
                 </div>
             `).join('');
         }
 
         function filterCurrencies() {
-            const term = document.getElementById('currency-search').value.toLowerCase();
-            const filtered = globalCurrencies.filter(c => 
-                c.name.toLowerCase().includes(term) || c.code.toLowerCase().includes(term)
-            );
-            renderCurrencyList(filtered);
+            const q = document.getElementById('curSearch').value.toLowerCase();
+            renderCurList(currencies.filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)));
         }
 
-        function selectCurrency(code) {
-            selectedCur = globalCurrencies.find(c => c.code === code);
-            renderCurrencyList(globalCurrencies);
-        }
+        function selectCur(code) { selectedCode = code; renderCurList(currencies); }
 
-        function finishOnboarding() {
-            if (!selectedCur) return alert("Please select a currency");
-            localStorage.setItem('elite_cur', selectedCur.symbol);
-            localStorage.setItem('elite_onboarded', 'true');
+        function saveCurrency() {
+            const match = currencies.find(c => c.code === selectedCode);
+            config.cur = match.sym; config.onboard = true;
+            localStorage.setItem('fynovo_config', JSON.stringify(config));
             document.getElementById('onboarding').style.display = 'none';
-            document.getElementById('home').classList.add('active');
-            renderApp();
+            renderUI();
         }
 
-        function nav(page, el) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(page).classList.add('active');
+        function renderUI() {
+            document.getElementById('set-cur').innerText = config.cur;
+            const history = document.getElementById('history-list');
+            history.innerHTML = db.length ? '' : '<p style="text-align:center; opacity:0.3; margin-top:40px;">No records yet</p>';
+            
+            let inc = 0, exp = 0;
+            db.forEach(t => {
+                t.type === 'in' ? inc += t.amt : exp += t.amt;
+                history.innerHTML += `
+                    <div class="tx-row">
+                        <div style="display:flex; align-items:center;">
+                            <div class="tx-icon"><i class="fas fa-receipt"></i></div>
+                            <div><b>${t.desc}</b><br><small style="color:var(--text-dim)">${t.date}</small></div>
+                        </div>
+                        <b style="color:${t.type === 'in' ? 'var(--success)' : 'white'}">${config.cur}${t.amt}</b>
+                    </div>`;
+            });
+            document.getElementById('total-bal').innerText = `${config.cur} ${(inc - exp).toLocaleString()}`;
+            document.getElementById('sum-in').innerText = `+${inc}`;
+            document.getElementById('sum-out').innerText = `-${exp}`;
+        }
+
+        function openLegal(type) {
+            const overlay = document.getElementById('legal-overlay');
+            const body = document.getElementById('legal-body');
+            const title = document.getElementById('legal-title');
+            overlay.style.display = 'block';
+
+            if(type === 'policy') {
+                title.innerText = "Privacy Policy";
+                body.innerHTML = `<h4>Data Safety</h4><p>At <strong>Fynovo Studio</strong>, we prioritize your privacy. SmartSpend Elite stores all data locally on your device storage. We do not collect, share, or sell your financial history to third parties.</p><h4>Compliance</h4><p>This app complies with the 2026 Google Play Data Safety policies regarding financial personal data.</p>`;
+            } else {
+                title.innerText = "About Fynovo Studio";
+                body.innerHTML = `<h4>Our Vision</h4><p>Fynovo Studio is a premium mobile experience lab. We build tools that empower users to manage their lives with zero friction and maximum security.</p><p>Support: fynovostudio@gmail.com</p>`;
+            }
+        }
+
+        function closeLegal() { document.getElementById('legal-overlay').style.display = 'none'; }
+        
+        function nav(id, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
             el.classList.add('active');
         }
 
-        function renderApp() {
-            const cur = localStorage.getItem('elite_cur') || '$';
-            document.getElementById('main-balance').innerText = `${cur} 0.00`;
-            document.getElementById('active-cur-display').innerText = cur;
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(18); doc.text("Financial Report - Fynovo Studio", 14, 20);
+            doc.setFontSize(10); doc.text(`Currency: ${config.cur} | Date: ${new Date().toLocaleDateString()}`, 14, 28);
+            const rows = db.map(t => [t.date, t.desc, t.type.toUpperCase(), `${config.cur}${t.amt}`]);
+            doc.autoTable({ head: [['Date', 'Description', 'Type', 'Amount']], body: rows, startY: 35 });
+            doc.save("SmartSpend_Report.pdf");
         }
 
-        checkFirstTime();
+        init();
     </script>
 </body>
 </html>
