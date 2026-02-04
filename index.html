@@ -21,84 +21,108 @@
         .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 100px; animation: fadeIn 0.3s ease; }
         .screen.active { display: block; }
 
-        /* Dashboard Items */
+        /* Dashboard & Cards */
         .hero { background: var(--brand-grad); padding: 30px; border-radius: 32px; color: white; margin-bottom: 25px; box-shadow: 0 15px 30px rgba(0,0,0,0.3); }
         .action-hub { display: flex; gap: 12px; margin-bottom: 25px; }
-        .action-btn { flex: 1; padding: 20px; border-radius: 20px; border: none; color: white; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s; }
+        .action-btn { flex: 1; padding: 18px; border-radius: 20px; border: none; color: white; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .btn-inc { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); }
         .btn-exp { background: rgba(244, 63, 94, 0.1); border: 1px solid var(--danger); color: var(--danger); }
 
-        /* Analytics Specific */
-        .chart-container { background: var(--surface); border-radius: 28px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-card { background: var(--surface); padding: 16px; border-radius: 20px; border: 1px solid var(--border); }
-        .cat-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        /* Transaction List */
+        .tx-card { background: var(--surface); padding: 16px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; transition: 0.2s; }
+        .tx-card:active { transform: scale(0.98); background: var(--surface-sub); }
 
-        /* UI Helpers */
-        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 16px; margin-bottom: 12px; }
+        /* Modal & Sheet */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9000; align-items: flex-end; }
+        .modal-content { background: var(--surface); width: 100%; padding: 30px 24px; border-radius: 32px 32px 0 0; border-top: 1px solid var(--border); }
+        input, select { width: 100%; padding: 16px; margin-bottom: 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-sub); color: white; font-size: 16px; }
+        
+        /* Navigation */
         nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: rgba(30, 41, 59, 0.95); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 1000; }
         .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; }
         .nav-link.active { color: var(--brand); }
         .nav-link i { font-size: 20px; display: block; margin-bottom: 4px; }
+
+        /* Settings Rows */
+        .row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .row i { color: var(--brand); }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="onboarding" style="display: none; position: fixed; inset: 0; background: var(--bg); z-index: 9999; flex-direction: column; padding: 40px; text-align: center;">
-        <h2 style="margin-top: 50%;">Set Currency</h2>
-        <button class="action-btn" style="background: var(--brand-grad); margin-top: 20px;" onclick="localStorage.setItem('fynovo_config', JSON.stringify({cur: '$', onboard: true})); location.reload();">Use USD ($)</button>
+    <div id="onboarding" style="display:none; position:fixed; inset:0; background:var(--bg); z-index:10000; padding:40px; text-align:center;">
+        <div style="font-size:60px; margin-top:100px;">💰</div>
+        <h2 style="margin:20px 0;">Select Currency</h2>
+        <select id="onboard-cur" style="margin-top:20px;">
+            <option value="$">USD ($)</option>
+            <option value="Rs">PKR (Rs)</option>
+            <option value="€">EUR (€)</option>
+        </select>
+        <button class="action-btn" style="background:var(--brand-grad); width:100%;" onclick="finishOnboarding()">Start Experience</button>
     </div>
 
     <div id="home" class="screen active">
         <div class="hero">
-            <small style="opacity: 0.8; font-weight: 700;">TOTAL BALANCE</small>
-            <h1 id="total-bal" style="font-size: 38px; margin: 5px 0;">$ 0.00</h1>
-            <p style="font-size: 11px; opacity: 0.6;">Fynovo Studio Vault</p>
+            <small style="opacity:0.7; font-weight:700; text-transform:uppercase;">Net Balance</small>
+            <h1 id="total-bal" style="font-size:38px; margin:5px 0;">$ 0.00</h1>
+            <p style="font-size:10px; opacity:0.5;">Fynovo Studio Privacy Shield Active</p>
         </div>
 
         <div class="action-hub">
-            <button class="action-btn btn-inc" onclick="openModal('income')"><i class="fas fa-plus-circle"></i>Income</button>
-            <button class="action-btn btn-exp" onclick="openModal('expense')"><i class="fas fa-minus-circle"></i>Expense</button>
+            <button class="action-btn btn-inc" onclick="openEntry('income')"><i class="fas fa-plus-circle"></i>Income</button>
+            <button class="action-btn btn-exp" onclick="openEntry('expense')"><i class="fas fa-minus-circle"></i>Expense</button>
         </div>
 
-        <h3>Latest Transactions</h3>
-        <div id="history-list" style="margin-top: 15px;"></div>
+        <h3 style="margin-bottom:15px;">Transactions <small style="float:right; opacity:0.4; font-weight:400;">Tap to edit</small></h3>
+        <div id="tx-list"></div>
     </div>
 
     <div id="analytics" class="screen">
-        <h2 style="margin-bottom: 20px;">Insights</h2>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <small style="color: var(--success)">Monthly Income</small>
-                <h3 id="stat-inc">$0</h3>
-            </div>
-            <div class="stat-card">
-                <small style="color: var(--danger)">Monthly Spent</small>
-                <h3 id="stat-exp">$0</h3>
-            </div>
+        <h2 style="margin-bottom:20px;">Insights</h2>
+        <div style="background:var(--surface); padding:20px; border-radius:24px; margin-bottom:20px;">
+            <canvas id="insightChart" style="max-height:220px;"></canvas>
         </div>
-
-        <div class="chart-container">
-            <canvas id="categoryChart" style="max-height: 250px;"></canvas>
-        </div>
-
-        <div class="card">
-            <small style="color: var(--brand); font-weight: 800; display: block; margin-bottom: 15px;">SPENDING BY CATEGORY</small>
-            <div id="category-breakdown"></div>
-        </div>
+        <div id="cat-stats"></div>
     </div>
 
     <div id="settings" class="screen">
-        <h2 style="margin-bottom: 25px;">Settings</h2>
-        <div class="card" onclick="localStorage.clear(); location.reload();" style="color: var(--danger)">
-            <span>Reset Database</span><i class="fas fa-trash float-right"></i>
+        <h2 style="margin-bottom:20px;">Settings</h2>
+        
+        <div style="background:var(--surface); padding:0 16px; border-radius:20px; border:1px solid var(--border);">
+            <div class="row" onclick="window.location.href='mailto:fynovostudio@gmail.com'">
+                <span>Contact Support</span><i class="fas fa-envelope"></i>
+            </div>
+            <div class="row" onclick="showLegal('Privacy Policy', 'SmartSpend Elite by Fynovo Studio does not collect your data. All records are stored locally on your device.')">
+                <span>Privacy Policy</span><i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="row" onclick="showLegal('About', 'Fynovo Studio creates secure, minimalist financial tools.')">
+                <span>About Fynovo Studio</span><i class="fas fa-info-circle"></i>
+            </div>
+            <div class="row" onclick="resetApp()" style="color:var(--danger); border:none;">
+                <span>Reset All Data</span><i class="fas fa-trash"></i>
+            </div>
         </div>
-        <div style="text-align: center; opacity: 0.4; font-size: 11px; margin-top: 40px;">
-            <p>Fynovo Studio Support</p>
-            <p>fynovostudio@gmail.com</p>
+    </div>
+
+    <div id="entry-modal" class="modal" onclick="if(event.target==this) closeEntry()">
+        <div class="modal-content">
+            <h2 id="entry-title" style="margin-bottom:20px; text-align:center;">Entry</h2>
+            <input type="hidden" id="edit-id">
+            <input type="number" id="amt" placeholder="0.00" inputmode="decimal">
+            <input type="text" id="desc" placeholder="Label (e.g. Grocery)">
+            <select id="cat">
+                <option value="Salary">Salary</option>
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Other">Other</option>
+            </select>
+            <div style="display:flex; gap:10px;">
+                <button id="del-btn" class="action-btn" style="background:rgba(244,63,94,0.1); color:var(--danger); display:none;" onclick="deleteEntry()">Delete</button>
+                <button id="save-btn" class="action-btn" style="background:var(--brand-grad); flex:2;" onclick="saveEntry()">Save</button>
+            </div>
         </div>
     </div>
 
@@ -109,92 +133,111 @@
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('fynovo_db_v6')) || [];
+        let db = JSON.parse(localStorage.getItem('fynovo_final_v1')) || [];
         let config = JSON.parse(localStorage.getItem('fynovo_config')) || { cur: '$', onboard: false };
-        let chartInstance = null;
+        let currentType = 'expense';
+        let chart = null;
+
+        function init() {
+            if(!config.onboard) document.getElementById('onboarding').style.display = 'block';
+            renderHome();
+        }
+
+        function finishOnboarding() {
+            config.cur = document.getElementById('onboard-cur').value;
+            config.onboard = true;
+            localStorage.setItem('fynovo_config', JSON.stringify(config));
+            document.getElementById('onboarding').style.display = 'none';
+            renderHome();
+        }
 
         function nav(id, el) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             el.classList.add('active');
-            if (id === 'analytics') renderAnalytics();
+            if(id === 'analytics') renderAnalytics();
         }
 
-        function renderAnalytics() {
-            const expenses = db.filter(t => t.type === 'expense');
-            const categories = {};
-            let totalExp = 0, totalInc = 0;
-
-            db.forEach(t => {
-                if (t.type === 'income') totalInc += t.amt;
-                else {
-                    totalExp += t.amt;
-                    categories[t.cat] = (categories[t.cat] || 0) + t.amt;
-                }
-            });
-
-            document.getElementById('stat-inc').innerText = `${config.cur}${totalInc.toLocaleString()}`;
-            document.getElementById('stat-exp').innerText = `${config.cur}${totalExp.toLocaleString()}`;
-
-            // Render Chart
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
+        function openEntry(type, id = null) {
+            currentType = type;
+            document.getElementById('entry-modal').style.display = 'flex';
+            document.getElementById('del-btn').style.display = id ? 'block' : 'none';
             
-            if (Object.keys(categories).length > 0) {
-                chartInstance = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(categories),
-                        datasets: [{
-                            data: Object.values(categories),
-                            backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#a855f7'],
-                            borderWidth: 0,
-                            hoverOffset: 10
-                        }]
-                    },
-                    options: {
-                        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans' } } } },
-                        cutout: '75%'
-                    }
-                });
+            if(id) {
+                const item = db.find(t => t.id === id);
+                document.getElementById('edit-id').value = id;
+                document.getElementById('amt').value = item.amt;
+                document.getElementById('desc').value = item.desc;
+                document.getElementById('cat').value = item.cat;
+                document.getElementById('entry-title').innerText = "Edit Record";
+            } else {
+                document.getElementById('edit-id').value = '';
+                document.getElementById('amt').value = '';
+                document.getElementById('desc').value = '';
+                document.getElementById('entry-title').innerText = type === 'income' ? 'Add Income' : 'Add Expense';
+            }
+        }
+
+        function closeEntry() { document.getElementById('entry-modal').style.display = 'none'; }
+
+        function saveEntry() {
+            const id = document.getElementById('edit-id').value;
+            const amt = parseFloat(document.getElementById('amt').value);
+            const desc = document.getElementById('desc').value;
+            const cat = document.getElementById('cat').value;
+
+            if(!amt || !desc) return;
+
+            if(id) {
+                const index = db.findIndex(t => t.id == id);
+                db[index] = { ...db[index], amt, desc, cat };
+            } else {
+                db.push({ id: Date.now(), type: currentType, amt, desc, cat, date: new Date().toLocaleDateString() });
             }
 
-            // Render Breakdown List
-            const breakdown = document.getElementById('category-breakdown');
-            breakdown.innerHTML = Object.keys(categories).map(cat => `
-                <div class="cat-row">
-                    <span>${cat}</span>
-                    <b style="color: var(--brand)">${config.cur}${categories[cat].toLocaleString()}</b>
-                </div>
-            `).join('');
+            localStorage.setItem('fynovo_final_v1', JSON.stringify(db));
+            closeEntry(); renderHome();
+        }
+
+        function deleteEntry() {
+            const id = document.getElementById('edit-id').value;
+            db = db.filter(t => t.id != id);
+            localStorage.setItem('fynovo_final_v1', JSON.stringify(db));
+            closeEntry(); renderHome();
         }
 
         function renderHome() {
-            const list = document.getElementById('history-list');
+            const list = document.getElementById('tx-list');
             list.innerHTML = '';
             let bal = 0;
             db.slice().reverse().forEach(t => {
                 bal += (t.type === 'income' ? t.amt : -t.amt);
-                list.innerHTML += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><b>${t.desc}</b><br><small style="color:var(--text-dim)">${t.cat}</small></div>
-                    <b style="color:${t.type === 'income' ? 'var(--success)' : 'white'}">${config.cur}${t.amt}</b>
-                </div>`;
+                list.innerHTML += `
+                    <div class="tx-card" onclick="openEntry('${t.type}', ${t.id})">
+                        <div><b>${t.desc}</b><br><small style="color:var(--text-dim)">${t.cat}</small></div>
+                        <b style="color:${t.type === 'income' ? 'var(--success)' : 'white'}">${config.cur}${t.amt.toLocaleString()}</b>
+                    </div>`;
             });
             document.getElementById('total-bal').innerText = `${config.cur} ${bal.toLocaleString()}`;
         }
 
-        // Add dummy data for visual testing if empty
-        if (db.length === 0) {
-            db = [
-                { id: 1, type: 'income', amt: 5000, desc: 'Monthly Salary', cat: 'Salary', date: '01/02/2026' },
-                { id: 2, type: 'expense', amt: 120, desc: 'Grocery Store', cat: 'Food', date: '02/02/2026' },
-                { id: 3, type: 'expense', amt: 50, desc: 'Taxi Ride', cat: 'Transport', date: '03/02/2026' }
-            ];
-            localStorage.setItem('fynovo_db_v6', JSON.stringify(db));
+        function renderAnalytics() {
+            const categories = {};
+            db.filter(t => t.type === 'expense').forEach(t => categories[t.cat] = (categories[t.cat] || 0) + t.amt);
+            const ctx = document.getElementById('insightChart').getContext('2d');
+            if(chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: Object.keys(categories), datasets: [{ data: Object.values(categories), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#a855f7'], borderWidth:0 }] },
+                options: { cutout: '80%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+            });
         }
 
-        renderHome();
+        function showLegal(title, text) { alert(`${title}\n\n${text}`); }
+        function resetApp() { if(confirm("Nuke all data?")) { localStorage.clear(); location.reload(); } }
+
+        init();
     </script>
 </body>
 </html>
