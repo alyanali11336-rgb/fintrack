@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSpend Debugged</title>
+    <title>SmartSpend Core</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,10 +16,9 @@
             --border: rgba(255,255,255,0.06); --radius: 20px;
         }
 
-        /* Dynamic Themes */
         [data-theme="emerald"] { --brand: #10b981; }
+        [data-theme="royal"] { --brand: #f59e0b; }
         [data-theme="crimson"] { --brand: #ef4444; }
-        [data-theme="amber"] { --brand: #f59e0b; }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
@@ -27,127 +26,122 @@
         .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 100px; }
         .screen.active { display: block; }
 
-        /* Prisoner Lock Styles */
-        .lock-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .pin-dots { display: flex; gap: 15px; margin-bottom: 30px; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand); }
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand); margin: 0 5px; }
         .dot.active { background: var(--brand); }
 
-        /* UI Cards */
         .hero { background: linear-gradient(135deg, var(--brand) 0%, #000 150%); padding: 30px; border-radius: var(--radius); margin-bottom: 20px; }
-        .tx-card { background: var(--surface); padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border: 1px solid var(--border); }
-        .icon-box { width: 40px; height: 40px; border-radius: 10px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); }
+        .tx-card { background: var(--surface); padding: 15px; border-radius: 16px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .icon-box { width: 42px; height: 42px; border-radius: 12px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); }
 
-        /* Form & Search */
-        input, select { width: 100%; padding: 14px; border-radius: 12px; background: var(--surface-sub); border: 1px solid var(--border); color: white; margin-bottom: 12px; }
-        .btn { background: var(--brand); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 700; width: 100%; cursor: pointer; }
-        
-        nav { position: fixed; bottom: 0; width: 100%; height: 75px; background: rgba(11,15,26,0.98); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
-        .nav-link { color: var(--text-dim); text-align: center; font-size: 10px; cursor: pointer; }
-        .nav-link.active { color: var(--brand); }
+        input, select { width: 100%; padding: 14px; border-radius: 12px; background: var(--surface-sub); border: 1px solid var(--border); color: white; margin-bottom: 12px; outline: none; }
+        .btn-main { background: var(--brand); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; cursor: pointer; }
+
+        /* Goal Meter Styles */
+        .goal-box { background: var(--surface); padding: 20px; border-radius: 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+        .progress-bg { width: 100%; height: 10px; background: var(--surface-sub); border-radius: 10px; margin: 12px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--brand); width: 0%; transition: 0.5s; }
+
+        nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(11,15,26,0.98); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
+        .nav-link { color: var(--text-dim); text-align: center; font-size: 10px; cursor: pointer; transition: 0.2s; }
+        .nav-link.active { color: var(--brand); transform: translateY(-3px); }
     </style>
 </head>
 <body data-theme="default">
 
-    <div id="lock-screen" class="lock-overlay">
-        <i class="fas fa-user-lock fa-3x" style="color:var(--brand); margin-bottom:20px;"></i>
-        <h2 style="margin-bottom:20px;">Prisoner Protocol</h2>
-        <div class="pin-dots" id="pin-dots">
+    <div id="lock-screen" class="overlay">
+        <i class="fas fa-user-lock fa-4x" style="color:var(--brand); margin-bottom:10px;"></i>
+        <h2>Prisoner Restricted</h2>
+        <div style="display:flex; margin: 30px 0;">
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; text-align:center;" id="keypad"></div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; text-align:center; width:250px;" id="numpad"></div>
     </div>
 
-    <div id="home" class="screen active">
+    <div id="vault" class="screen active">
         <div class="hero">
-            <p style="font-size:12px; opacity:0.6; font-weight:800;">VAULT BALANCE</p>
-            <h1 id="bal-display" style="font-size:36px;">$0.00</h1>
+            <small style="font-weight:800; opacity:0.6;">NET ASSETS</small>
+            <h1 id="display-bal" style="font-size:38px;">$0.00</h1>
         </div>
-        <input type="text" id="search" placeholder="Search transactions..." oninput="renderHome()" style="background:var(--surface);">
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="btn" style="background:var(--success)" onclick="openModal('income')">Revenue</button>
-            <button class="btn" style="background:var(--danger)" onclick="openModal('expense')">Expense</button>
+        <input type="text" id="search" placeholder="Search entries..." oninput="renderVault()">
+        <div style="display:flex; gap:12px; margin-bottom:20px;">
+            <button class="btn-main" style="background:var(--success)" onclick="openEntry('income')">Revenue</button>
+            <button class="btn-main" style="background:var(--danger)" onclick="openEntry('expense')">Expense</button>
         </div>
-        <div id="tx-list"></div>
+        <div id="tx-history"></div>
     </div>
 
     <div id="analytics" class="screen">
         <h2>Athletics</h2>
-        <div style="background:var(--surface); padding:20px; border-radius:20px; margin-top:20px;">
-            <canvas id="chart"></canvas>
+        
+        <div class="goal-box" style="margin-top:20px;">
+            <div style="display:flex; justify-content:space-between;">
+                <b>Monthly Goal</b>
+                <span id="goal-text">0 / 0</span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill" id="goal-fill"></div></div>
+            <small id="goal-status" style="color:var(--text-dim)">Set a limit in Settings</small>
+        </div>
+
+        <div style="background:var(--surface); padding:20px; border-radius:22px; border:1px solid var(--border);">
+            <canvas id="chartArea" style="max-height:280px;"></canvas>
         </div>
     </div>
 
     <div id="settings" class="screen">
         <h2>Settings</h2>
         <br>
+        <label>Monthly Spending Goal</label>
+        <input type="number" id="goal-input" placeholder="Enter Amount" onchange="saveSettings()">
+
         <label>Primary Currency</label>
-        <select id="set-cur" onchange="updateConfig()">
+        <select id="cur-select" onchange="saveSettings()">
             <option value="$">USD ($)</option>
             <option value="Rs">PKR (Rs)</option>
             <option value="€">EUR (€)</option>
-        </select>
-        
-        <label>Theme</label>
-        <select id="set-theme" onchange="updateConfig()">
-            <option value="default">Midnight Indigo</option>
-            <option value="emerald">Emerald Forest</option>
-            <option value="crimson">Crimson Guard</option>
-            <option value="amber">Amber Royal</option>
+            <option value="£">GBP (£)</option>
         </select>
 
-        <button class="btn" onclick="localStorage.clear(); location.reload();" style="margin-top:20px; background:var(--danger)">Reset All Data</button>
+        <label>Interface Theme</label>
+        <select id="theme-select" onchange="saveSettings()">
+            <option value="default">Midnight Indigo</option>
+            <option value="emerald">Emerald Green</option>
+            <option value="royal">Royal Gold</option>
+            <option value="crimson">Crimson Guard</option>
+        </select>
+
+        <button class="btn-main" onclick="localStorage.clear(); location.reload();" style="background:var(--danger); margin-top:30px;">Wipe All Data</button>
     </div>
 
-    <div id="modal" class="lock-overlay" style="display:none; background:rgba(0,0,0,0.9);">
-        <div style="background:var(--surface); width:90%; padding:25px; border-radius:20px;">
-            <h3 id="modal-title">New Entry</h3><br>
-            <input type="number" id="amt" placeholder="0.00">
-            <input type="text" id="desc" placeholder="Label">
-            <select id="cat">
-                <option value="fa-shopping-cart">Shopping</option>
-                <option value="fa-utensils">Food</option>
+    <div id="entry-modal" class="overlay" style="display:none; background:rgba(0,0,0,0.92);">
+        <div style="background:var(--surface); width:90%; padding:25px; border-radius:24px;">
+            <h3 id="entry-title">Entry</h3><br>
+            <input type="number" id="amt" placeholder="0.00" inputmode="decimal">
+            <input type="text" id="desc" placeholder="Merchant/Label">
+            <select id="cat-icon">
+                <option value="fa-shopping-bag">Shopping</option>
+                <option value="fa-utensils">Food & Dining</option>
                 <option value="fa-car">Transport</option>
-                <option value="fa-briefcase">Salary</option>
+                <option value="fa-heartbeat">Health</option>
+                <option value="fa-briefcase">Work/Salary</option>
             </select>
-            <button class="btn" onclick="saveEntry()">Confirm Entry</button>
-            <button onclick="closeModal()" style="background:none; border:none; color:var(--text-dim); width:100%; margin-top:15px;">Cancel</button>
+            <button class="btn-main" onclick="confirmEntry()">Commit Entry</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:var(--text-dim); margin-top:20px; width:100%;">Cancel</button>
         </div>
     </div>
 
     <nav>
-        <div class="nav-link active" onclick="nav('home', this)"><i class="fas fa-wallet fa-2x"></i><br>Vault</div>
-        <div class="nav-link" onclick="nav('analytics', this)"><i class="fas fa-chart-pie fa-2x"></i><br>Athletics</div>
-        <div class="nav-link" onclick="nav('settings', this)"><i class="fas fa-cog fa-2x"></i><br>Settings</div>
+        <div class="nav-link active" onclick="tab('vault', this)"><i class="fas fa-wallet fa-2x"></i><br>Vault</div>
+        <div class="nav-link" onclick="tab('analytics', this)"><i class="fas fa-chart-line fa-2x"></i><br>Athletics</div>
+        <div class="nav-link" onclick="tab('settings', this)"><i class="fas fa-sliders-h fa-2x"></i><br>Settings</div>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('db')) || [];
-        let config = JSON.parse(localStorage.getItem('config')) || { cur: '$', theme: 'default', pin: '1234' };
-        let tempPin = '', myChart = null, currentType = 'income';
+        let db = JSON.parse(localStorage.getItem('v_db')) || [];
+        let config = JSON.parse(localStorage.getItem('v_cfg')) || { cur: '$', theme: 'default', pin: '1234', goal: 0 };
+        let tempPin = '', myChart = null, activeType = 'income';
 
-        // Debugged Lock System
-        function renderKeypad() {
-            const keys = ['1','2','3','4','5','6','7','8','9','','0','<'];
-            document.getElementById('keypad').innerHTML = keys.map(k => `<div style="font-size:24px; padding:10px; cursor:pointer;" onclick="pressPin('${k}')">${k === '<' ? '←' : k}</div>`).join('');
-        }
-
-        function pressPin(v) {
-            if(v === '') return;
-            if(v === '<') tempPin = tempPin.slice(0,-1);
-            else if(tempPin.length < 4) tempPin += v;
-            
-            const dots = document.querySelectorAll('.dot');
-            dots.forEach((d,i) => d.className = i < tempPin.length ? 'dot active' : 'dot');
-
-            if(tempPin.length === 4) {
-                if(tempPin === config.pin) { document.getElementById('lock-screen').style.display = 'none'; tempPin = ''; }
-                else { alert('Access Denied'); tempPin = ''; dots.forEach(d => d.className = 'dot'); }
-            }
-        }
-
-        // Debugged Features logic
-        function nav(id, el) {
+        function tab(id, el) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -155,65 +149,81 @@
             if(id === 'analytics') renderAnalytics();
         }
 
-        function openModal(t) { currentType = t; document.getElementById('modal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-        function saveEntry() {
-            const a = parseFloat(document.getElementById('amt').value);
-            const d = document.getElementById('desc').value || 'General';
-            const c = document.getElementById('cat').value;
-            if(!a) return;
-            db.push({ type: currentType, amt: a, desc: d, icon: c });
-            localStorage.setItem('db', JSON.stringify(db));
-            closeModal(); renderHome();
+        function renderNumpad() {
+            const keys = ['1','2','3','4','5','6','7','8','9','','0','<'];
+            document.getElementById('numpad').innerHTML = keys.map(k => `<div onclick="press('${k}')" style="padding:15px; font-size:24px; font-weight:700;">${k==='<'?'←':k}</div>`).join('');
         }
 
-        function renderHome() {
-            const list = document.getElementById('tx-list');
+        function press(v) {
+            if(v==='') return;
+            if(v==='<') tempPin = tempPin.slice(0,-1);
+            else if(tempPin.length < 4) tempPin += v;
+            document.querySelectorAll('.dot').forEach((d,i) => d.className = i < tempPin.length ? 'dot active' : 'dot');
+            if(tempPin.length === 4) {
+                if(tempPin === config.pin) { document.getElementById('lock-screen').style.display='none'; tempPin=''; }
+                else { alert('Access Denied'); tempPin=''; document.querySelectorAll('.dot').forEach(d => d.className='dot'); }
+            }
+        }
+
+        function openEntry(t) { activeType = t; document.getElementById('entry-modal').style.display='flex'; }
+        function closeModal() { document.getElementById('entry-modal').style.display='none'; }
+
+        function confirmEntry() {
+            const val = parseFloat(document.getElementById('amt').value);
+            if(!val) return;
+            db.push({ type: activeType, amt: val, desc: document.getElementById('desc').value || 'General', icon: document.getElementById('cat-icon').value, date: new Date().toLocaleDateString() });
+            localStorage.setItem('v_db', JSON.stringify(db));
+            closeModal(); renderVault();
+        }
+
+        function renderVault() {
+            const list = document.getElementById('tx-history');
             const search = document.getElementById('search').value.toLowerCase();
-            let bal = 0; list.innerHTML = '';
-
-            db.forEach(t => bal += (t.type === 'income' ? t.amt : -t.amt));
-            document.getElementById('bal-display').innerText = config.cur + bal.toLocaleString();
-
+            let total = 0; list.innerHTML = '';
+            db.forEach(t => total += (t.type === 'income' ? t.amt : -t.amt));
+            document.getElementById('display-bal').innerText = config.cur + total.toLocaleString();
             db.slice().reverse().filter(t => t.desc.toLowerCase().includes(search)).forEach(t => {
-                list.innerHTML += `
-                    <div class="tx-card">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div class="icon-box"><i class="fas ${t.icon}"></i></div>
-                            <div><b>${t.desc}</b></div>
-                        </div>
-                        <b style="color:${t.type === 'income' ? 'var(--success)' : 'white'}">${t.type === 'income' ? '+' : '-'}${config.cur}${t.amt}</b>
-                    </div>`;
+                list.innerHTML += `<div class="tx-card"><div style="display:flex; align-items:center; gap:12px;"><div class="icon-box"><i class="fas ${t.icon}"></i></div><div><b>${t.desc}</b></div></div><b style="color:${t.type==='income'?'var(--success)':'white'}">${t.type==='income'?'+':'-'}${config.cur}${t.amt}</b></div>`;
             });
         }
 
         function renderAnalytics() {
-            const ctx = document.getElementById('chart').getContext('2d');
-            const data = {};
-            db.filter(t => t.type === 'expense').forEach(t => data[t.icon] = (data[t.icon] || 0) + t.amt);
+            const spent = db.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amt, 0);
+            const goal = parseFloat(config.goal) || 0;
+            const perc = goal > 0 ? Math.min((spent / goal) * 100, 100) : 0;
+            
+            document.getElementById('goal-text').innerText = `${config.cur}${spent} / ${config.cur}${goal}`;
+            document.getElementById('goal-fill').style.width = perc + '%';
+            document.getElementById('goal-status').innerText = goal > 0 ? (spent > goal ? "Goal Exceeded!" : "On Track") : "Set a limit in Settings";
+            document.getElementById('goal-fill').style.background = spent > goal ? 'var(--danger)' : 'var(--brand)';
+
+            const ctx = document.getElementById('chartArea').getContext('2d');
+            const expenses = {};
+            db.filter(t => t.type === 'expense').forEach(t => expenses[t.icon] = (expenses[t.icon] || 0) + t.amt);
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#f59e0b'] }] },
-                options: { plugins: { legend: { labels: { color: 'white' } } } }
+                data: { labels: Object.keys(expenses), datasets: [{ data: Object.values(expenses), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#f59e0b'], borderWidth: 0 }] },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } }
             });
         }
 
-        function updateConfig() {
-            config.cur = document.getElementById('set-cur').value;
-            config.theme = document.getElementById('set-theme').value;
+        function saveSettings() {
+            config.cur = document.getElementById('cur-select').value;
+            config.theme = document.getElementById('theme-select').value;
+            config.goal = document.getElementById('goal-input').value;
             document.body.setAttribute('data-theme', config.theme);
-            localStorage.setItem('config', JSON.stringify(config));
-            renderHome();
+            localStorage.setItem('v_cfg', JSON.stringify(config));
+            renderVault();
         }
 
         window.onload = () => {
-            renderKeypad();
-            renderHome();
+            renderNumpad();
+            renderVault();
             document.body.setAttribute('data-theme', config.theme);
-            document.getElementById('set-cur').value = config.cur;
-            document.getElementById('set-theme').value = config.theme;
+            document.getElementById('cur-select').value = config.cur;
+            document.getElementById('theme-select').value = config.theme;
+            document.getElementById('goal-input').value = config.goal;
         };
     </script>
 </body>
