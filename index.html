@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSpend Core</title>
+    <title>SmartSpend Master</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -18,12 +18,11 @@
 
         [data-theme="emerald"] { --brand: #10b981; }
         [data-theme="royal"] { --brand: #f59e0b; }
-        [data-theme="crimson"] { --brand: #ef4444; }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
-        .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 100px; }
+        .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 110px; }
         .screen.active { display: block; }
 
         .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -35,35 +34,37 @@
         .icon-box { width: 42px; height: 42px; border-radius: 12px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); }
 
         input, select { width: 100%; padding: 14px; border-radius: 12px; background: var(--surface-sub); border: 1px solid var(--border); color: white; margin-bottom: 12px; outline: none; }
+        .search-bar { background: var(--surface); border: 1px solid var(--border); margin-bottom: 20px; }
         .btn-main { background: var(--brand); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 700; width: 100%; cursor: pointer; }
 
-        /* Goal Meter Styles */
         .goal-box { background: var(--surface); padding: 20px; border-radius: 18px; margin-bottom: 20px; border: 1px solid var(--border); }
         .progress-bg { width: 100%; height: 10px; background: var(--surface-sub); border-radius: 10px; margin: 12px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--brand); width: 0%; transition: 0.5s; }
 
-        nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(11,15,26,0.98); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); }
-        .nav-link { color: var(--text-dim); text-align: center; font-size: 10px; cursor: pointer; transition: 0.2s; }
-        .nav-link.active { color: var(--brand); transform: translateY(-3px); }
+        .sys-card { background: var(--surface); padding: 18px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+
+        nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: rgba(11,15,26,0.98); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: 10px; }
+        .nav-link { color: var(--text-dim); text-align: center; font-size: 10px; cursor: pointer; }
+        .nav-link.active { color: var(--brand); }
     </style>
 </head>
 <body data-theme="default">
 
     <div id="lock-screen" class="overlay">
         <i class="fas fa-user-lock fa-4x" style="color:var(--brand); margin-bottom:10px;"></i>
-        <h2>Prisoner Restricted</h2>
-        <div style="display:flex; margin: 30px 0;">
+        <h2 style="margin-bottom: 30px;">Prisoner Restricted</h2>
+        <div style="display:flex; margin-bottom: 40px;">
             <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
         </div>
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px; text-align:center; width:250px;" id="numpad"></div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:25px; text-align:center; width:250px;" id="numpad"></div>
     </div>
 
     <div id="vault" class="screen active">
         <div class="hero">
-            <small style="font-weight:800; opacity:0.6;">NET ASSETS</small>
+            <small style="font-weight:800; opacity:0.6;">AVAILABLE ASSETS</small>
             <h1 id="display-bal" style="font-size:38px;">$0.00</h1>
         </div>
-        <input type="text" id="search" placeholder="Search entries..." oninput="renderVault()">
+        <input type="text" id="search" class="search-bar" placeholder="Search transactions..." oninput="renderVault()">
         <div style="display:flex; gap:12px; margin-bottom:20px;">
             <button class="btn-main" style="background:var(--success)" onclick="openEntry('income')">Revenue</button>
             <button class="btn-main" style="background:var(--danger)" onclick="openEntry('expense')">Expense</button>
@@ -73,44 +74,47 @@
 
     <div id="analytics" class="screen">
         <h2>Athletics</h2>
-        
         <div class="goal-box" style="margin-top:20px;">
-            <div style="display:flex; justify-content:space-between;">
-                <b>Monthly Goal</b>
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <b>Spending Goal</b>
                 <span id="goal-text">0 / 0</span>
             </div>
             <div class="progress-bg"><div class="progress-fill" id="goal-fill"></div></div>
-            <small id="goal-status" style="color:var(--text-dim)">Set a limit in Settings</small>
+            <small id="goal-status" style="color:var(--text-dim)"></small>
         </div>
-
         <div style="background:var(--surface); padding:20px; border-radius:22px; border:1px solid var(--border);">
             <canvas id="chartArea" style="max-height:280px;"></canvas>
         </div>
     </div>
 
-    <div id="settings" class="screen">
-        <h2>Settings</h2>
+    <div id="system" class="screen">
+        <h2>System</h2>
         <br>
-        <label>Monthly Spending Goal</label>
-        <input type="number" id="goal-input" placeholder="Enter Amount" onchange="saveSettings()">
+        <div class="sys-card" onclick="alert('Privacy Protocol: All data is 100% Offline. Your transactions never leave this physical hardware.')">
+            <span><i class="fas fa-shield-alt" style="margin-right:10px; color:var(--brand)"></i> Privacy Protocol</span>
+            <i class="fas fa-chevron-right"></i>
+        </div>
+        <div class="sys-card" onclick="window.location.href='mailto:support@smartspend.ai'">
+            <span><i class="fas fa-envelope" style="margin-right:10px; color:var(--brand)"></i> Email Support</span>
+            <i class="fas fa-chevron-right"></i>
+        </div>
+        <br>
+        <label>Monthly Budget Limit</label>
+        <input type="number" id="goal-input" placeholder="Set Goal" onchange="saveSettings()">
 
-        <label>Primary Currency</label>
+        <label>Currency & Theme</label>
         <select id="cur-select" onchange="saveSettings()">
             <option value="$">USD ($)</option>
             <option value="Rs">PKR (Rs)</option>
             <option value="€">EUR (€)</option>
-            <option value="£">GBP (£)</option>
         </select>
-
-        <label>Interface Theme</label>
         <select id="theme-select" onchange="saveSettings()">
             <option value="default">Midnight Indigo</option>
             <option value="emerald">Emerald Green</option>
             <option value="royal">Royal Gold</option>
-            <option value="crimson">Crimson Guard</option>
         </select>
 
-        <button class="btn-main" onclick="localStorage.clear(); location.reload();" style="background:var(--danger); margin-top:30px;">Wipe All Data</button>
+        <button class="btn-main" onclick="localStorage.clear(); location.reload();" style="background:var(--danger); margin-top:20px;">Factory Reset</button>
     </div>
 
     <div id="entry-modal" class="overlay" style="display:none; background:rgba(0,0,0,0.92);">
@@ -120,10 +124,9 @@
             <input type="text" id="desc" placeholder="Merchant/Label">
             <select id="cat-icon">
                 <option value="fa-shopping-bag">Shopping</option>
-                <option value="fa-utensils">Food & Dining</option>
-                <option value="fa-car">Transport</option>
+                <option value="fa-utensils">Food</option>
+                <option value="fa-briefcase">Salary</option>
                 <option value="fa-heartbeat">Health</option>
-                <option value="fa-briefcase">Work/Salary</option>
             </select>
             <button class="btn-main" onclick="confirmEntry()">Commit Entry</button>
             <button onclick="closeModal()" style="background:none; border:none; color:var(--text-dim); margin-top:20px; width:100%;">Cancel</button>
@@ -133,12 +136,12 @@
     <nav>
         <div class="nav-link active" onclick="tab('vault', this)"><i class="fas fa-wallet fa-2x"></i><br>Vault</div>
         <div class="nav-link" onclick="tab('analytics', this)"><i class="fas fa-chart-line fa-2x"></i><br>Athletics</div>
-        <div class="nav-link" onclick="tab('settings', this)"><i class="fas fa-sliders-h fa-2x"></i><br>Settings</div>
+        <div class="nav-link" onclick="tab('system', this)"><i class="fas fa-cog fa-2x"></i><br>System</div>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('v_db')) || [];
-        let config = JSON.parse(localStorage.getItem('v_cfg')) || { cur: '$', theme: 'default', pin: '1234', goal: 0 };
+        let db = JSON.parse(localStorage.getItem('m_db')) || [];
+        let config = JSON.parse(localStorage.getItem('m_cfg')) || { cur: '$', theme: 'default', pin: '1234', goal: 0 };
         let tempPin = '', myChart = null, activeType = 'income';
 
         function tab(id, el) {
@@ -161,7 +164,7 @@
             document.querySelectorAll('.dot').forEach((d,i) => d.className = i < tempPin.length ? 'dot active' : 'dot');
             if(tempPin.length === 4) {
                 if(tempPin === config.pin) { document.getElementById('lock-screen').style.display='none'; tempPin=''; }
-                else { alert('Access Denied'); tempPin=''; document.querySelectorAll('.dot').forEach(d => d.className='dot'); }
+                else { tempPin=''; document.querySelectorAll('.dot').forEach(d => d.className='dot'); }
             }
         }
 
@@ -172,16 +175,16 @@
             const val = parseFloat(document.getElementById('amt').value);
             if(!val) return;
             db.push({ type: activeType, amt: val, desc: document.getElementById('desc').value || 'General', icon: document.getElementById('cat-icon').value, date: new Date().toLocaleDateString() });
-            localStorage.setItem('v_db', JSON.stringify(db));
+            localStorage.setItem('m_db', JSON.stringify(db));
             closeModal(); renderVault();
         }
 
         function renderVault() {
             const list = document.getElementById('tx-history');
             const search = document.getElementById('search').value.toLowerCase();
-            let total = 0; list.innerHTML = '';
-            db.forEach(t => total += (t.type === 'income' ? t.amt : -t.amt));
-            document.getElementById('display-bal').innerText = config.cur + total.toLocaleString();
+            let bal = 0; list.innerHTML = '';
+            db.forEach(t => bal += (t.type === 'income' ? t.amt : -t.amt));
+            document.getElementById('display-bal').innerText = config.cur + bal.toLocaleString();
             db.slice().reverse().filter(t => t.desc.toLowerCase().includes(search)).forEach(t => {
                 list.innerHTML += `<div class="tx-card"><div style="display:flex; align-items:center; gap:12px;"><div class="icon-box"><i class="fas ${t.icon}"></i></div><div><b>${t.desc}</b></div></div><b style="color:${t.type==='income'?'var(--success)':'white'}">${t.type==='income'?'+':'-'}${config.cur}${t.amt}</b></div>`;
             });
@@ -191,19 +194,18 @@
             const spent = db.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amt, 0);
             const goal = parseFloat(config.goal) || 0;
             const perc = goal > 0 ? Math.min((spent / goal) * 100, 100) : 0;
-            
             document.getElementById('goal-text').innerText = `${config.cur}${spent} / ${config.cur}${goal}`;
             document.getElementById('goal-fill').style.width = perc + '%';
-            document.getElementById('goal-status').innerText = goal > 0 ? (spent > goal ? "Goal Exceeded!" : "On Track") : "Set a limit in Settings";
             document.getElementById('goal-fill').style.background = spent > goal ? 'var(--danger)' : 'var(--brand)';
+            document.getElementById('goal-status').innerText = goal > 0 ? (spent > goal ? "Goal Exceeded" : "On Track") : "Goal not set";
 
             const ctx = document.getElementById('chartArea').getContext('2d');
-            const expenses = {};
-            db.filter(t => t.type === 'expense').forEach(t => expenses[t.icon] = (expenses[t.icon] || 0) + t.amt);
+            const dataMap = {};
+            db.filter(t => t.type === 'expense').forEach(t => dataMap[t.icon] = (dataMap[t.icon] || 0) + t.amt);
             if(myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(expenses), datasets: [{ data: Object.values(expenses), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#f59e0b'], borderWidth: 0 }] },
+                data: { labels: Object.keys(dataMap), datasets: [{ data: Object.values(dataMap), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#f59e0b'], borderWidth: 0 }] },
                 options: { plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } }
             });
         }
@@ -213,18 +215,11 @@
             config.theme = document.getElementById('theme-select').value;
             config.goal = document.getElementById('goal-input').value;
             document.body.setAttribute('data-theme', config.theme);
-            localStorage.setItem('v_cfg', JSON.stringify(config));
+            localStorage.setItem('m_cfg', JSON.stringify(config));
             renderVault();
         }
 
-        window.onload = () => {
-            renderNumpad();
-            renderVault();
-            document.body.setAttribute('data-theme', config.theme);
-            document.getElementById('cur-select').value = config.cur;
-            document.getElementById('theme-select').value = config.theme;
-            document.getElementById('goal-input').value = config.goal;
-        };
+        window.onload = () => { renderNumpad(); renderVault(); document.getElementById('goal-input').value = config.goal; document.body.setAttribute('data-theme', config.theme); };
     </script>
 </body>
 </html>
