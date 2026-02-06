@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSpend Elite Terminal</title>
+    <title>SmartSpend Sovereign Terminal</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -13,152 +13,152 @@
 
     <style>
         :root {
-            --brand: #6366f1; --bg: #0b0f1a; --surface: #161b2c; --surface-sub: #232a42;
-            --text: #ffffff; --text-dim: #94a3b8; --success: #10b981; --danger: #f43f5e;
-            --border: rgba(255,255,255,0.08); --radius: 22px;
+            /* Default Dark Mode */
+            --bg: #0b0f1a; --surface: #161b2c; --surface-sub: #232a42;
+            --text: #ffffff; --text-dim: #94a3b8; --border: rgba(255,255,255,0.08);
+            --brand: #6366f1; --success: #10b981; --danger: #f43f5e; --radius: 22px;
         }
 
-        [data-theme="emerald"] { --brand: #10b981; }
-        [data-theme="royal"] { --brand: #f59e0b; }
+        [data-theme="light"] {
+            --bg: #f8fafc; --surface: #ffffff; --surface-sub: #f1f5f9;
+            --text: #0f172a; --text-dim: #64748b; --border: rgba(0,0,0,0.08);
+        }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.3s, color 0.3s; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
         .screen { display: none; height: 100vh; overflow-y: auto; padding: 25px 20px 120px; }
-        .screen.active { display: block; animation: screenFade 0.4s ease; }
+        .screen.active { display: block; animation: sysFade 0.4s ease; }
+        @keyframes sysFade { from { opacity: 0; } to { opacity: 1; } }
 
-        @keyframes screenFade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Interior Components */
+        .hero-card { background: var(--brand); padding: 35px 25px; border-radius: var(--radius); margin-bottom: 25px; color: #fff; position: relative; overflow: hidden; }
+        .hero-card::after { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
 
-        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand); margin: 0 8px; transition: 0.3s; }
-        .dot.active { background: var(--brand); transform: scale(1.2); }
+        .tx-card { background: var(--surface); padding: 18px; border-radius: 18px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .icon-box { width: 48px; height: 48px; border-radius: 15px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); font-size: 20px; }
 
-        .hero-card { background: linear-gradient(160deg, var(--brand) 0%, #000 140%); padding: 35px 25px; border-radius: var(--radius); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .tx-card { background: var(--surface); padding: 18px; border-radius: 18px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; transition: 0.2s; }
-        .icon-box { width: 45px; height: 45px; border-radius: 14px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); font-size: 18px; }
+        input, select { width: 100%; padding: 16px; border-radius: 14px; background: var(--surface-sub); border: 1px solid var(--border); color: var(--text); margin-bottom: 15px; outline: none; font-weight: 600; }
+        .btn-action { background: var(--brand); color: white; border: none; padding: 18px; border-radius: 16px; font-weight: 800; width: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-        input, select { width: 100%; padding: 16px; border-radius: 14px; background: var(--surface-sub); border: 1px solid var(--border); color: white; margin-bottom: 15px; font-size: 15px; outline: none; }
-        .btn-action { background: var(--brand); color: white; border: none; padding: 18px; border-radius: 16px; font-weight: 800; width: 100%; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
-
-        .search-container { position: sticky; top: -25px; background: var(--bg); padding: 15px 0; z-index: 10; margin-bottom: 10px; }
-        .goal-container { background: var(--surface); padding: 20px; border-radius: 20px; border: 1px solid var(--border); margin-bottom: 25px; }
-        .progress-track { width: 100%; height: 8px; background: var(--surface-sub); border-radius: 10px; margin: 12px 0; overflow: hidden; }
-        .progress-bar { height: 100%; background: var(--brand); transition: 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
-
-        .info-strip { background: rgba(99, 102, 241, 0.1); border-left: 4px solid var(--brand); padding: 15px; border-radius: 8px; font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
-
-        nav { position: fixed; bottom: 0; width: 100%; height: 90px; background: rgba(11, 15, 26, 0.98); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: 15px; z-index: 5000; }
-        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        /* Navigation */
+        nav { position: fixed; bottom: 0; width: 100%; height: 90px; background: var(--surface); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: 15px; z-index: 5000; }
+        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; }
         .nav-link.active { color: var(--brand); }
         .nav-link i { font-size: 24px; margin-bottom: 6px; display: block; }
+
+        /* Overlays */
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand); margin: 0 8px; }
+        .dot.active { background: var(--brand); }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
     <div id="lock-screen" class="overlay">
-        <i class="fas fa-shield-halved fa-4x" style="color:var(--brand); margin-bottom:15px;"></i>
-        <h2 style="letter-spacing: 2px;">SECURE ACCESS</h2>
-        <div style="display:flex; margin: 30px 0;">
-            <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:30px; text-align:center; width:280px;" id="numpad"></div>
+        <i class="fas fa-fingerprint fa-4x" style="color:var(--brand); margin-bottom:15px;"></i>
+        <h2 style="letter-spacing: 2px; font-weight: 800;">SOVEREIGN LOCK</h2>
+        <div style="display:flex; margin: 40px 0;"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:35px;" id="numpad"></div>
     </div>
 
     <div id="scr-vault" class="screen active">
         <div class="hero-card">
-            <p style="font-size:11px; font-weight:800; opacity:0.7; letter-spacing:1px;">LIQUID CAPITAL</p>
-            <h1 id="main-bal" style="font-size:40px; margin: 5px 0;">--</h1>
-            <button onclick="exportToPDF()" style="background: rgba(255,255,255,0.1); border:none; color:white; padding:8px 15px; border-radius:8px; font-size:12px; font-weight:700;">
-                <i class="fas fa-file-pdf"></i> Export Statement
-            </button>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <p style="font-size:11px; font-weight:800; opacity:0.8; letter-spacing:1px;">TOTAL ASSETS</p>
+                    <h1 id="main-bal" style="font-size:42px;">--</h1>
+                </div>
+                <button onclick="exportToPDF()" style="background:rgba(255,255,255,0.2); border:none; color:#fff; width:45px; height:45px; border-radius:12px;"><i class="fas fa-file-export"></i></button>
+            </div>
         </div>
 
-        <div class="search-container">
-            <input type="text" id="search-tx" placeholder="Smart Search (Live)..." oninput="renderVault()">
-        </div>
+        <input type="text" id="search-tx" placeholder="Smart Search Transactions..." oninput="renderVault()" style="background:var(--surface);">
 
         <div style="display:flex; gap:12px; margin-bottom:25px;">
-            <button class="btn-action" style="background:var(--success); flex:1;" onclick="triggerEntry('income')"><i class="fas fa-plus-circle"></i> Revenue</button>
-            <button class="btn-action" style="background:var(--danger); flex:1;" onclick="triggerEntry('expense')"><i class="fas fa-minus-circle"></i> Expense</button>
+            <button class="btn-action" style="background:var(--success); flex:1;" onclick="triggerEntry('income')"><i class="fas fa-arrow-down"></i> Revenue</button>
+            <button class="btn-action" style="background:var(--danger); flex:1;" onclick="triggerEntry('expense')"><i class="fas fa-arrow-up"></i> Expense</button>
         </div>
 
         <div id="tx-history"></div>
     </div>
 
     <div id="scr-stats" class="screen">
-        <h2 style="margin-bottom:20px;">Athletics Performance</h2>
-        <div class="goal-container" id="goal-ui">
+        <h2 style="margin-bottom:20px;">Interior Analytics</h2>
+        <div style="background:var(--surface); padding:20px; border-radius:20px; border:1px solid var(--border); margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;"><b>Spending Goal</b><span id="goal-stat">--</span></div>
+            <div style="width:100%; height:8px; background:var(--surface-sub); border-radius:10px; overflow:hidden;">
+                <div id="goal-bar" style="height:100%; background:var(--brand); width:0%; transition:0.8s;"></div>
             </div>
+        </div>
         <div style="background:var(--surface); padding:25px; border-radius:22px; border:1px solid var(--border);">
             <canvas id="statChart" style="max-height:300px;"></canvas>
         </div>
     </div>
 
     <div id="scr-support" class="screen">
-        <h2 style="margin-bottom:20px;">System Terminal</h2>
-        <div class="info-strip"><strong>Privacy Protocol:</strong> All financial telecomformation is offline and secure.</div>
-        <div style="background:var(--surface); border-radius:18px; border:1px solid var(--border); overflow:hidden; margin-bottom:25px;">
-            <div style="padding:20px; border-bottom:1px solid var(--border);" onclick="alert('Encryption Active')">Sovereign Encryption</div>
-            <div style="padding:20px;" onclick="window.location.href='mailto:support@smartspend.ai'">Priority Support</div>
+        <h2 style="margin-bottom:20px;">System Config</h2>
+        
+        <div style="background:var(--surface); padding:20px; border-radius:18px; border:1px solid var(--border); margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <b>Appearance</b>
+                <button onclick="toggleTheme()" id="theme-btn" class="btn-action" style="width:auto; padding:8px 20px; font-size:12px;">Toggle Light/Dark</button>
+            </div>
         </div>
-        <label>Settings</label>
-        <input type="number" id="cfg-goal" placeholder="Set Goal" onchange="applySettings()">
-        <select id="cfg-cur" onchange="applySettings()"><option value="$">USD</option><option value="Rs">PKR</option></select>
-        <button class="btn-action" style="background:var(--danger); margin-top:20px;" onclick="factoryReset()">Wipe Terminal</button>
+
+        <label>Monthly Ceiling</label>
+        <input type="number" id="cfg-goal" onchange="applySettings()">
+
+        <label>Currency Format</label>
+        <select id="cfg-cur" onchange="applySettings()">
+            <option value="$">USD ($)</option>
+            <option value="Rs">PKR (Rs)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+        </select>
+
+        <div style="padding:20px; background:rgba(99,102,241,0.1); border-radius:15px; font-size:13px; margin-top:20px;">
+            <strong>Privacy Note:</strong> This terminal is offline. No data is shared with the telecomformation grid.
+        </div>
+        <button class="btn-action" style="background:var(--danger); margin-top:20px;" onclick="factoryReset()">System Wipe</button>
     </div>
 
-    <div id="entry-modal" class="overlay" style="display:none; background:rgba(5,7,10,0.96);">
-        <div style="background:var(--surface); width:90%; padding:30px; border-radius:28px;">
-            <h3 id="modal-head">Entry</h3><br>
+    <div id="entry-modal" class="overlay" style="display:none; background:rgba(0,0,0,0.9);">
+        <div style="background:var(--surface); width:92%; max-width:400px; padding:30px; border-radius:28px;">
+            <h3 id="modal-head" style="margin-bottom:20px;">Sovereign Entry</h3>
             <input type="number" id="f-amt" placeholder="0.00">
-            <input type="text" id="f-desc" placeholder="Label">
+            <input type="text" id="f-desc" placeholder="Transaction Label">
+            
+            <label style="font-size:12px; margin-bottom:5px; display:block;">Smart Categories</label>
             <select id="f-cat">
-                <option value="fa-shopping-cart">Commerce</option>
-                <option value="fa-utensils">Food</option>
-                <option value="fa-briefcase">Revenue</option>
+                <option value="fa-shopping-cart">🛒 Shopping & Retail</option>
+                <option value="fa-utensils">🍔 Food & Dining</option>
+                <option value="fa-gas-pump">🚗 Transport & Fuel</option>
+                <option value="fa-house">🏠 Rent & Mortgage</option>
+                <option value="fa-bolt">⚡ Utilities & Bills</option>
+                <option value="fa-heartbeat">medical_services Medical & Health</option>
+                <option value="fa-briefcase">💰 Salary & Income</option>
+                <option value="fa-film">🎬 Entertainment</option>
+                <option value="fa-globe">✈️ Travel & Leisure</option>
             </select>
-            <button class="btn-action" onclick="commitEntry()">Confirm</button>
-            <button id="f-del" class="btn-action" style="background:transparent; color:var(--danger); border:1px solid var(--danger); margin-top:10px; display:none;" onclick="removeEntry()">Delete</button>
-            <button style="background:none; border:none; color:var(--text-dim); width:100%; margin-top:20px;" onclick="closeModal()">Dismiss</button>
+            
+            <button class="btn-action" onclick="commitEntry()">Save Record</button>
+            <button id="f-del" class="btn-action" style="background:transparent; color:var(--danger); border:1px solid var(--danger); margin-top:10px; display:none;" onclick="removeEntry()">Erase Record</button>
+            <button onclick="closeModal()" style="background:none; border:none; color:var(--text-dim); width:100%; margin-top:20px;">Dismiss</button>
         </div>
     </div>
 
     <nav>
-        <div class="nav-link active" onclick="navigate('scr-vault', this)"><i class="fas fa-vault"></i>Vault</div>
-        <div class="nav-link" onclick="navigate('scr-stats', this)"><i class="fas fa-chart-pie"></i>Athletics</div>
-        <div class="nav-link" onclick="navigate('scr-support', this)"><i class="fas fa-microchip"></i>System</div>
+        <div class="nav-link active" onclick="navigate('scr-vault', this)"><i class="fas fa-shield-alt"></i>Vault</div>
+        <div class="nav-link" onclick="navigate('scr-stats', this)"><i class="fas fa-analytics"></i>Athletics</div>
+        <div class="nav-link" onclick="navigate('scr-support', this)"><i class="fas fa-cog"></i>System</div>
     </nav>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('elite_db')) || [];
-        let cfg = JSON.parse(localStorage.getItem('elite_cfg')) || { cur: '$', theme: 'default', pin: '1234', goal: 2000 };
+        let db = JSON.parse(localStorage.getItem('sov_db')) || [];
+        let cfg = JSON.parse(localStorage.getItem('sov_cfg')) || { cur: '$', theme: 'dark', pin: '1234', goal: 2500 };
         let tempPin = '', activeChart = null, entryMode = 'income', editIdx = null;
 
-        // --- NEW: PDF EXPORT ENGINE ---
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            doc.setFontSize(20);
-            doc.text("SMARTSPEND ELITE STATEMENT", 14, 22);
-            doc.setFontSize(10);
-            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
-            doc.text(`Currency: ${cfg.cur}`, 14, 35);
-
-            const rows = db.map(t => [t.date, t.desc, t.type.toUpperCase(), `${cfg.cur}${t.amt}`]);
-            
-            doc.autoTable({
-                head: [['Date', 'Description', 'Type', 'Amount']],
-                body: rows,
-                startY: 45,
-                theme: 'striped',
-                headStyles: { fillStyle: '#6366f1' }
-            });
-
-            doc.save("SmartSpend_Statement.pdf");
-        }
-
-        // --- PREVIOUS CORE LOGIC (PRESERVED & FIXED) ---
         function navigate(id, el) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
@@ -169,7 +169,7 @@
 
         function renderPad() {
             const keys = ['1','2','3','4','5','6','7','8','9','','0','<'];
-            document.getElementById('numpad').innerHTML = keys.map(k => `<div onclick="inputPin('${k}')" style="padding:10px; font-size:26px; font-weight:800;">${k==='<'?'←':k}</div>`).join('');
+            document.getElementById('numpad').innerHTML = keys.map(k => `<div onclick="inputPin('${k}')" style="font-size:28px; font-weight:800; cursor:pointer;">${k==='<'?'←':k}</div>`).join('');
         }
 
         function inputPin(v) {
@@ -178,9 +178,15 @@
             else if(tempPin.length < 4) tempPin += v;
             document.querySelectorAll('.dot').forEach((d,i) => d.className = i < tempPin.length ? 'dot active' : 'dot');
             if(tempPin.length === 4) {
-                if(tempPin === cfg.pin) { document.getElementById('lock-screen').style.display = 'none'; tempPin = ''; }
-                else { tempPin = ''; document.querySelectorAll('.dot').forEach(d => d.className = 'dot'); }
+                if(tempPin === cfg.pin) { document.getElementById('lock-screen').style.display='none'; tempPin=''; }
+                else { tempPin=''; document.querySelectorAll('.dot').forEach(d => d.className='dot'); }
             }
+        }
+
+        function toggleTheme() {
+            cfg.theme = (cfg.theme === 'dark') ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', cfg.theme);
+            saveData();
         }
 
         function triggerEntry(type, idx = null) {
@@ -190,11 +196,10 @@
                 const item = db[idx];
                 document.getElementById('f-amt').value = item.amt;
                 document.getElementById('f-desc').value = item.desc;
-                document.getElementById('modal-head').innerText = "Modify Record";
+                document.getElementById('f-cat').value = item.cat;
             } else {
                 document.getElementById('f-amt').value = '';
                 document.getElementById('f-desc').value = '';
-                document.getElementById('modal-head').innerText = type === 'income' ? "Revenue" : "Expense";
             }
             document.getElementById('entry-modal').style.display = 'flex';
         }
@@ -202,28 +207,23 @@
         function commitEntry() {
             const amt = parseFloat(document.getElementById('f-amt').value);
             if(!amt) return;
-            const data = { type: entryMode, amt: amt, desc: document.getElementById('f-desc').value || 'System Entry', cat: document.getElementById('f-cat').value, date: new Date().toLocaleDateString() };
+            const data = { type: entryMode, amt: amt, desc: document.getElementById('f-desc').value || 'Label', cat: document.getElementById('f-cat').value, date: new Date().toLocaleDateString() };
             if(editIdx !== null) db[editIdx] = data; else db.push(data);
             saveData(); closeModal(); renderVault();
         }
 
-        function removeEntry() { if(confirm("Erase record?")) { db.splice(editIdx, 1); saveData(); closeModal(); renderVault(); } }
+        function removeEntry() { if(confirm("Erase Permanently?")) { db.splice(editIdx, 1); saveData(); closeModal(); renderVault(); } }
         function closeModal() { document.getElementById('entry-modal').style.display = 'none'; }
-        function saveData() { localStorage.setItem('elite_db', JSON.stringify(db)); localStorage.setItem('elite_cfg', JSON.stringify(cfg)); }
+        function saveData() { localStorage.setItem('sov_db', JSON.stringify(db)); localStorage.setItem('sov_cfg', JSON.stringify(cfg)); }
 
         function renderVault() {
             const list = document.getElementById('tx-history');
             const search = document.getElementById('search-tx').value.toLowerCase();
             let bal = 0; list.innerHTML = '';
-            
             db.forEach((t, i) => {
                 bal += (t.type === 'income' ? t.amt : -t.amt);
                 if(t.desc.toLowerCase().includes(search)) {
-                    const card = document.createElement('div');
-                    card.className = 'tx-card';
-                    card.onclick = () => triggerEntry(t.type, i);
-                    card.innerHTML = `<div style="display:flex; align-items:center; gap:15px;"><div class="icon-box"><i class="fas ${t.cat}"></i></div><div><b>${t.desc}</b><br><small>${t.date}</small></div></div><b style="color:${t.type==='income'?'var(--success)':'white'}">${cfg.cur}${t.amt.toLocaleString()}</b>`;
-                    list.prepend(card);
+                    list.innerHTML = `<div class="tx-card" onclick="triggerEntry('${t.type}', ${i})"><div style="display:flex; align-items:center; gap:15px;"><div class="icon-box"><i class="fas ${t.cat}"></i></div><div><b style="font-size:15px;">${t.desc}</b><br><small style="color:var(--text-dim)">${t.date}</small></div></div><b style="color:${t.type==='income'?'var(--success)':'var(--text)'}">${cfg.cur}${t.amt.toLocaleString()}</b></div>` + list.innerHTML;
                 }
             });
             document.getElementById('main-bal').innerText = `${cfg.cur}${bal.toLocaleString()}`;
@@ -231,23 +231,32 @@
 
         function renderAnalytics() {
             const totalSpent = db.filter(t => t.type === 'expense').reduce((s, t) => s + t.amt, 0);
-            const goal = parseFloat(cfg.goal) || 0;
-            const progress = goal > 0 ? Math.min((totalSpent / goal) * 100, 100) : 0;
-            
-            document.getElementById('goal-ui').innerHTML = `
-                <div style="display:flex; justify-content:space-between; font-weight:700;"><span>Goal</span><span>${cfg.cur}${totalSpent} / ${cfg.cur}${goal}</span></div>
-                <div class="progress-track"><div class="progress-bar" style="width:${progress}%; background:${totalSpent > goal ? 'var(--danger)' : 'var(--brand)'}"></div></div>
-            `;
+            const goal = parseFloat(cfg.goal) || 1;
+            const progress = Math.min((totalSpent / goal) * 100, 100);
+            document.getElementById('goal-stat').innerText = `${cfg.cur}${totalSpent} / ${cfg.cur}${goal}`;
+            document.getElementById('goal-bar').style.width = progress + '%';
+            document.getElementById('goal-bar').style.background = totalSpent > goal ? 'var(--danger)' : 'var(--brand)';
 
-            const catMap = {};
-            db.filter(t => t.type === 'expense').forEach(t => catMap[t.cat] = (catMap[t.cat] || 0) + t.amt);
             const ctx = document.getElementById('statChart').getContext('2d');
+            const cats = {}; db.filter(t => t.type === 'expense').forEach(t => cats[t.cat] = (cats[t.cat] || 0) + t.amt);
             if(activeChart) activeChart.destroy();
             activeChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(catMap).map(c => c.split('-')[1]), datasets: [{ data: Object.values(catMap), backgroundColor: ['#6366f1', '#10b981', '#f43f5e'] }] },
-                options: { plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } }
+                data: { labels: Object.keys(cats).map(k => k.split('-')[1]), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#8b5cf6'], borderWidth: 0 }] },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: cfg.theme === 'dark' ? '#fff' : '#000' } } } }
             });
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("Sovereign Statement", 14, 20);
+            doc.autoTable({
+                head: [['Date', 'Label', 'Type', 'Amount']],
+                body: db.map(t => [t.date, t.desc, t.type.toUpperCase(), `${cfg.cur}${t.amt}`]),
+                startY: 30
+            });
+            doc.save("statement.pdf");
         }
 
         function applySettings() {
@@ -256,9 +265,14 @@
             saveData(); renderVault();
         }
 
-        function factoryReset() { if(confirm("Wipe Terminal?")) { localStorage.clear(); location.reload(); } }
+        function factoryReset() { if(confirm("Complete Wipe?")) { localStorage.clear(); location.reload(); } }
 
-        window.onload = () => { renderPad(); renderVault(); document.getElementById('cfg-cur').value = cfg.cur; document.getElementById('cfg-goal').value = cfg.goal; };
+        window.onload = () => {
+            renderPad(); renderVault();
+            document.getElementById('cfg-cur').value = cfg.cur;
+            document.getElementById('cfg-goal').value = cfg.goal;
+            document.body.setAttribute('data-theme', cfg.theme);
+        };
     </script>
 </body>
 </html>
