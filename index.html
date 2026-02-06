@@ -23,15 +23,18 @@
         .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 100px; animation: fadeIn 0.4s ease; }
         .screen.active { display: block; }
 
-        /* Professional Overlays */
+        /* Overlays (Security & Onboarding) */
         .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; padding: 40px 24px; text-align: center; }
         .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand); margin: 8px; transition: 0.2s; }
         .pin-dot.filled { background: var(--brand); transform: scale(1.2); }
 
-        /* Dashboard & Cards */
-        .hero { background: var(--brand-grad); padding: 35px 25px; border-radius: 32px; color: white; margin-bottom: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        /* Modern Dashboard UI */
+        .hero { background: var(--brand-grad); padding: 35px 25px; border-radius: 32px; color: white; margin-bottom: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        
         .action-hub { display: flex; gap: 12px; margin-bottom: 25px; }
-        .action-btn { flex: 1; padding: 20px; border-radius: 24px; border: none; color: white; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .action-btn { flex: 1; padding: 20px; border-radius: 24px; border: none; color: white; font-weight: 800; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.95); }
         .btn-inc { background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); color: var(--success); }
         .btn-exp { background: rgba(244, 63, 94, 0.1); border: 1px solid var(--danger); color: var(--danger); }
 
@@ -39,35 +42,38 @@
         .icon-box { width: 48px; height: 48px; border-radius: 16px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--brand); }
 
         /* Navigation */
-        nav { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(30, 41, 59, 0.98); backdrop-filter: blur(15px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: rgba(30, 41, 59, 0.98); backdrop-filter: blur(20px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; }
         .nav-link.active { color: var(--brand); }
-        .nav-link i { font-size: 22px; margin-bottom: 4px; display: block; }
+        .nav-link i { font-size: 22px; margin-bottom: 5px; display: block; }
 
-        /* Inputs */
+        /* Forms & Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; align-items: flex-end; }
-        .modal-content { background: var(--surface); width: 100%; padding: 35px 24px; border-radius: 35px 35px 0 0; border-top: 1px solid var(--border); }
-        input, select { width: 100%; padding: 18px; margin-bottom: 15px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface-sub); color: white; font-size: 16px; outline: none; }
+        .modal-content { background: var(--surface); width: 100%; padding: 35px 24px; border-radius: 35px 35px 0 0; border-top: 1px solid var(--border); max-height: 85vh; overflow-y: auto; }
+        input, select { width: 100%; padding: 18px; margin-bottom: 15px; border-radius: 18px; border: 1px solid var(--border); background: var(--surface-sub); color: white; font-size: 16px; outline: none; }
 
-        .num-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 300px; margin: 0 auto; }
-        .num-pad div { font-size: 28px; font-weight: 600; padding: 15px; cursor: pointer; }
+        .num-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; max-width: 320px; margin: 0 auto; }
+        .num-pad div { font-size: 28px; font-weight: 600; padding: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+        .chip { display: inline-flex; align-items: center; background: var(--surface-sub); padding: 10px 18px; border-radius: 14px; margin: 6px; font-size: 13px; border: 1px solid var(--border); }
+        .chip i { margin-left: 12px; color: var(--danger); cursor: pointer; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="onboarding-cur" class="overlay">
-        <h2 style="font-weight: 800;">Select Currency</h2>
-        <p style="color:var(--text-dim); margin: 10px 0 30px;">Choose your primary asset unit</p>
-        <div id="cur-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; overflow-y:auto; margin-bottom:20px;"></div>
-        <button class="action-btn" style="background:var(--brand-grad); width:100%;" onclick="nextToPin()">Next Step</button>
+    <div id="ob-cur" class="overlay">
+        <h2 style="font-weight: 800;">Currency Selection</h2>
+        <p style="color:var(--text-dim); margin-top:10px;">Select your primary financial unit</p>
+        <div id="cur-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; overflow-y:auto; margin: 30px 0;"></div>
+        <button class="action-btn" style="background:var(--brand-grad); width:100%;" onclick="nextToPin()">Continue</button>
     </div>
 
-    <div id="onboarding-pin" class="overlay">
-        <h2 style="font-weight: 800;">Secure Your Vault</h2>
-        <p style="color:var(--text-dim); margin: 10px 0 30px;">Create a 4-digit custom PIN</p>
-        <div style="display:flex; justify-content:center; margin-bottom:40px;" id="setup-dots">
+    <div id="ob-pin" class="overlay">
+        <h2 style="font-weight: 800;">Set Access PIN</h2>
+        <p style="color:var(--text-dim); margin-top:10px;">Create your private 4-digit security code</p>
+        <div style="display:flex; justify-content:center; margin: 40px 0;" id="setup-dots">
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
         </div>
         <div class="num-pad" id="setup-pad"></div>
@@ -80,106 +86,123 @@
             <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
         </div>
         <div class="num-pad" id="lock-pad"></div>
-        <div style="margin-top: 40px; color: var(--brand); font-size: 30px;" onclick="simulateFingerprint()">
+        <div style="margin-top: 40px; color: var(--brand); font-size: 35px; opacity:0.8;" onclick="simBio()">
             <i class="fas fa-fingerprint"></i>
         </div>
     </div>
 
     <div id="home" class="screen active">
         <div class="hero">
-            <small style="opacity:0.7; font-weight:800; letter-spacing:1px;">TOTAL ASSETS</small>
-            <h1 id="total-bal" style="font-size:42px; margin:5px 0;">--</h1>
-            <p style="font-size:11px; opacity:0.6;"><i class="fas fa-check-circle"></i> Fynovo Private Ledger Active</p>
+            <small style="opacity:0.8; font-weight:800; letter-spacing:1px;">TOTAL ASSETS</small>
+            <h1 id="total-bal" style="font-size:42px; margin:8px 0;">--</h1>
+            <p style="font-size:11px; opacity:0.6;"><i class="fas fa-user-shield"></i> Duke Security Protocol Active</p>
         </div>
         <div class="action-hub">
-            <button class="action-btn btn-inc" onclick="openEntry('income')"><i class="fas fa-arrow-down-long"></i>Deposit</button>
-            <button class="action-btn btn-exp" onclick="openEntry('expense')"><i class="fas fa-arrow-up-long"></i>Payment</button>
+            <button class="action-btn btn-inc" onclick="openEntry('income')"><i class="fas fa-plus"></i>Revenue</button>
+            <button class="action-btn btn-exp" onclick="openEntry('expense')"><i class="fas fa-minus"></i>Expense</button>
         </div>
+        <h4 style="margin-bottom:15px; opacity:0.6;">Recent Activity</h4>
         <div id="tx-list"></div>
     </div>
 
     <div id="insights" class="screen">
-        <h2 style="margin-bottom:25px; font-weight:800;">Analytics</h2>
-        <div style="background:var(--surface); padding:25px; border-radius:32px; border:1px solid var(--border); margin-bottom: 25px;">
+        <h2 style="margin-bottom:25px; font-weight:800;">Financial Intelligence</h2>
+        <div style="background:var(--surface); padding:25px; border-radius:32px; border:1px solid var(--border); margin-bottom: 30px;">
             <canvas id="mainChart" style="max-height:260px;"></canvas>
         </div>
         <div id="breakdown"></div>
     </div>
 
     <div id="settings" class="screen">
-        <h2 style="margin-bottom:25px; font-weight:800;">Settings</h2>
-        <div style="background:var(--surface); border-radius:28px; padding:10px; border:1px solid var(--border);">
-            <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="toggleSecurity()">
-                <span>PIN Security</span><i class="fas fa-toggle-on" id="pin-toggle"></i>
+        <h2 style="margin-bottom:25px; font-weight:800;">Management</h2>
+        
+        <div style="margin-bottom: 30px;">
+            <h4 style="margin-bottom:12px; opacity:0.7;">Custom Categories</h4>
+            <div id="cat-chips" style="margin-bottom:15px;"></div>
+            <div style="display:flex; gap:12px;">
+                <input type="text" id="new-cat" placeholder="Add New Label" style="margin-bottom:0;">
+                <button onclick="addCat()" style="padding:0 20px; border-radius:18px; border:none; background:var(--brand); color:white;"><i class="fas fa-plus"></i></button>
+            </div>
+        </div>
+
+        <div style="background:var(--surface); border-radius:28px; padding:8px; border:1px solid var(--border);">
+            <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="toggleSec()">
+                <span>Biometric / PIN Security</span><i class="fas fa-toggle-on" id="sec-toggle"></i>
+            </div>
+            <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="showPolicy()">
+                <span>Privacy Protocol</span><i class="fas fa-user-lock"></i>
             </div>
             <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="window.location.href='mailto:fynovostudio@gmail.com'">
-                <span>Email Support</span><i class="fas fa-envelope-open"></i>
+                <span>Contact Support</span><i class="fas fa-envelope"></i>
             </div>
-            <div style="padding:18px; color:var(--danger);" onclick="resetData()">Wipe Data Storage</div>
+            <div style="padding:18px; color:var(--danger);" onclick="resetAll()">Factory Reset</div>
         </div>
-        <p style="text-align:center; margin-top:40px; opacity:0.3; font-size:11px;">Powered by Fynovo Studio &copy; 2026</p>
+        <p style="text-align:center; margin-top:40px; opacity:0.3; font-size:10px;">Fynovo Studio | Version 8.0</p>
     </div>
 
     <div id="entry-modal" class="modal" onclick="if(event.target==this) closeEntry()">
         <div class="modal-content">
-            <h2 id="modal-title" style="text-align:center; margin-bottom:25px;">New Record</h2>
+            <h2 id="modal-title" style="text-align:center; margin-bottom:25px;">Entry</h2>
             <input type="hidden" id="edit-id">
-            <input type="number" id="amt" placeholder="Amount (0.00)" inputmode="decimal">
-            <input type="text" id="desc" placeholder="Label (Optional)">
-            <select id="cat">
-                <option value="Salary">Salary / Profit</option>
-                <option value="Food">Food & Dining</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Transport">Transport</option>
-                <option value="Health">Healthcare</option>
-                <option value="Other">Miscellaneous</option>
-            </select>
+            <input type="number" id="amt" placeholder="0.00" inputmode="decimal">
+            <input type="text" id="desc" placeholder="Notes (Optional)">
+            <select id="entry-cat"></select>
             <div style="display:flex; gap:12px;">
-                <button id="del-btn" class="action-btn" style="background:rgba(244,63,94,0.1); color:var(--danger); display:none;" onclick="deleteEntry()">Delete</button>
-                <button class="action-btn" style="background:var(--brand-grad); flex:2;" onclick="saveEntry()">Confirm Entry</button>
+                <button id="del-btn" class="action-btn" style="background:rgba(244,63,94,0.1); color:var(--danger); display:none;" onclick="delEntry()">Delete</button>
+                <button class="action-btn" style="background:var(--brand-grad); flex:2;" onclick="saveEntry()">Confirm</button>
             </div>
         </div>
     </div>
 
+    <div id="policy-modal" class="modal" onclick="if(event.target==this) this.style.display='none'">
+        <div class="modal-content">
+            <h2 style="margin-bottom:15px;">Privacy Protocol</h2>
+            <p style="color:var(--text-dim); font-size:14px; line-height:1.7;">
+                1. <b>Zero-Cloud Storage:</b> Your data never leaves this device hardware.<br><br>
+                2. <b>Anonymous Architecture:</b> No account, email, or registration required.<br><br>
+                3. <b>Offline Integrity:</b> All calculations and security checks happen 100% offline.<br><br>
+                4. <b>Instant Wipe:</b> You maintain the master key to delete all data permanently.
+            </p>
+            <button class="action-btn" style="background:var(--surface-sub); width:100%; margin-top:20px;" onclick="document.getElementById('policy-modal').style.display='none'">Close</button>
+        </div>
+    </div>
+
     <nav>
-        <div class="nav-link active" onclick="nav('home', this)"><i class="fas fa-vault"></i>Vault</div>
-        <div class="nav-link" onclick="nav('insights', this)"><i class="fas fa-chart-bar"></i>Insights</div>
-        <div class="nav-link" onclick="nav('settings', this)"><i class="fas fa-user-shield"></i>Settings</div>
+        <div class="nav-link active" onclick="nav('home', this)"><i class="fas fa-shield-halved"></i>Vault</div>
+        <div class="nav-link" onclick="nav('insights', this)"><i class="fas fa-chart-pie"></i>Insights</div>
+        <div class="nav-link" onclick="nav('settings', this)"><i class="fas fa-gears"></i>System</div>
     </nav>
 
     <script>
-        const MASTER_CUR = [{c:'USD',s:'$'},{c:'PKR',s:'Rs'},{c:'EUR',s:'€'},{c:'GBP',s:'£'},{c:'INR',s:'₹'},{c:'AED',s:'د.إ'},{c:'SAR',s:'﷼'},{c:'CAD',s:'$'},{c:'AUD',s:'$'},{c:'JPY',s:'¥'},{c:'CNY',s:'¥'},{c:'TRY',s:'₺'},{c:'RUB',s:'₽'},{c:'BRL',s:'R$'},{c:'KRW',s:'₩'},{c:'SGD',s:'$'},{c:'MYR',s:'RM'},{c:'IDR',s:'Rp'},{c:'PHP',s:'₱'},{c:'THB',s:'฿'},{c:'ZAR',s:'R'},{c:'NGN',s:'₦'},{c:'EGP',s:'£'},{c:'MXN',s:'$'},{c:'CHF',s:'Fr'}];
-        const ICONS = { Salary: 'fa-briefcase', Food: 'fa-utensils', Shopping: 'fa-cart-shopping', Transport: 'fa-car-side', Health: 'fa-stethoscope', Other: 'fa-circle-nodes' };
-        
-        let db = [], config = { cur: '$', onboard: false, pinActive: false, pin: '' }, currentType = 'expense', tempPin = '', chart = null;
+        const CURS = [{c:'USD',s:'$'},{c:'PKR',s:'Rs'},{c:'EUR',s:'€'},{c:'GBP',s:'£'},{c:'INR',s:'₹'},{c:'AED',s:'د.إ'},{c:'SAR',s:'﷼'},{c:'CAD',s:'$'},{c:'AUD',s:'$'},{c:'JPY',s:'¥'},{c:'TRY',s:'₺'}];
+        let db = [], config = { cur: '$', onboard: false, duke: false, pin: '', cats: ['Revenue', 'Groceries', 'Dining', 'Shopping', 'Travel', 'Health'] }, tempPin = '', chart = null;
 
         window.onload = function() {
-            const sDb = localStorage.getItem('fynovo_db_v6');
-            const sCfg = localStorage.getItem('fynovo_cfg_v6');
+            const sDb = localStorage.getItem('fynovo_db_v8');
+            const sCfg = localStorage.getItem('fynovo_cfg_v8');
             if(sDb) db = JSON.parse(sDb);
             if(sCfg) config = JSON.parse(sCfg);
 
             if(!config.onboard) {
-                document.getElementById('onboarding-cur').style.display = 'flex';
-                renderCurrencies();
-            } else if(config.pinActive) {
+                document.getElementById('ob-cur').style.display = 'flex';
+                document.getElementById('cur-grid').innerHTML = CURS.map(m => `<div class="tx-card" id="c-${m.c}" onclick="setCur('${m.s}','${m.c}')" style="margin-bottom:0; justify-content:center;"><b>${m.c} (${m.s})</b></div>`).join('');
+            } else if(config.duke) {
                 document.getElementById('duke-lock').style.display = 'flex';
             }
             buildPads();
-            updateSettingsUI();
+            updateUI();
             renderHome();
+            renderCats();
         };
 
         function buildPads() {
-            const nums = ['1','2','3','4','5','6','7','8','9','','0','<'];
-            const containers = ['setup-pad', 'lock-pad'];
-            containers.forEach(cid => {
-                const el = document.getElementById(cid);
-                el.innerHTML = nums.map(n => `<div onclick="handlePad('${cid}','${n}')">${n === '<' ? '<i class="fas fa-backspace"></i>' : n}</div>`).join('');
+            const n = ['1','2','3','4','5','6','7','8','9','','0','<'];
+            ['setup-pad', 'lock-pad'].forEach(id => {
+                document.getElementById(id).innerHTML = n.map(x => `<div onclick="hPad('${id}','${x}')">${x === '<' ? '<i class="fas fa-backspace"></i>' : x}</div>`).join('');
             });
         }
 
-        function handlePad(id, val) {
+        function hPad(id, val) {
             if(val === '') return;
             if(val === '<') tempPin = tempPin.slice(0, -1);
             else if(tempPin.length < 4) tempPin += val;
@@ -189,40 +212,26 @@
 
             if(tempPin.length === 4) {
                 if(id === 'setup-pad') {
-                    config.pin = tempPin; config.onboard = true; config.pinActive = true;
-                    localStorage.setItem('fynovo_cfg_v6', JSON.stringify(config));
-                    document.getElementById('onboarding-pin').style.display = 'none';
+                    config.pin = tempPin; config.onboard = true; config.duke = true;
+                    save(); document.getElementById('ob-pin').style.display = 'none';
                     tempPin = ''; renderHome();
                 } else {
                     if(tempPin === config.pin) { document.getElementById('duke-lock').style.display = 'none'; tempPin = ''; }
-                    else { alert("Access Denied"); tempPin = ''; dots.forEach(d => d.className = 'pin-dot'); }
+                    else { alert("PIN Mismatch"); tempPin = ''; dots.forEach(d => d.className = 'pin-dot'); }
                 }
             }
         }
 
-        function renderCurrencies() {
-            document.getElementById('cur-list').innerHTML = MASTER_CUR.map(m => `
-                <div class="tx-card" id="c-${m.c}" onclick="setCur('${m.s}','${m.c}')" style="margin-bottom:0; justify-content:center;">
-                    <b>${m.c} (${m.s})</b>
-                </div>`).join('');
-        }
-
         function setCur(s, c) {
             config.cur = s;
-            document.querySelectorAll('#cur-list .tx-card').forEach(el => el.style.borderColor = 'var(--border)');
+            document.querySelectorAll('#cur-grid .tx-card').forEach(e => e.style.borderColor = 'var(--border)');
             document.getElementById(`c-${c}`).style.borderColor = 'var(--brand)';
         }
 
-        function nextToPin() {
-            document.getElementById('onboarding-cur').style.display = 'none';
-            document.getElementById('onboarding-pin').style.display = 'flex';
-        }
-
-        function simulateFingerprint() {
-            alert("Biometric scanning...");
-            setTimeout(() => { document.getElementById('duke-lock').style.display = 'none'; }, 1000);
-        }
-
+        function nextToPin() { document.getElementById('ob-cur').style.display = 'none'; document.getElementById('ob-pin').style.display = 'flex'; }
+        function save() { localStorage.setItem('fynovo_cfg_v8', JSON.stringify(config)); }
+        function simBio() { alert("Verifying identity..."); setTimeout(() => { document.getElementById('duke-lock').style.display = 'none'; }, 800); }
+        function showPolicy() { document.getElementById('policy-modal').style.display = 'flex'; }
         function nav(id, el) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
@@ -231,20 +240,32 @@
             if(id === 'insights') renderInsights();
         }
 
+        function addCat() {
+            const name = document.getElementById('new-cat').value.trim();
+            if(name && !config.cats.includes(name)) { config.cats.push(name); save(); document.getElementById('new-cat').value = ''; renderCats(); }
+        }
+
+        function remCat(name) { config.cats = config.cats.filter(c => c !== name); save(); renderCats(); }
+
+        function renderCats() {
+            document.getElementById('cat-chips').innerHTML = config.cats.map(c => `<span class="chip">${c} <i class="fas fa-circle-xmark" onclick="remCat('${c}')"></i></span>`).join('');
+            document.getElementById('entry-cat').innerHTML = config.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
         function openEntry(type, id = null) {
-            currentType = type;
             document.getElementById('entry-modal').style.display = 'flex';
-            document.getElementById('modal-title').innerText = type === 'income' ? 'Deposit Assets' : 'New Payment';
+            document.getElementById('modal-title').innerText = type === 'income' ? 'Asset Deposit' : 'Vault Payment';
             document.getElementById('del-btn').style.display = id ? 'block' : 'none';
             if(id) {
                 const item = db.find(t => t.id === id);
                 document.getElementById('edit-id').value = id;
                 document.getElementById('amt').value = item.amt;
                 document.getElementById('desc').value = item.desc;
-                document.getElementById('cat').value = item.cat;
+                document.getElementById('entry-cat').value = item.cat;
             } else {
                 document.getElementById('edit-id').value = ''; document.getElementById('amt').value = ''; document.getElementById('desc').value = '';
             }
+            window.currentType = type;
         }
 
         function closeEntry() { document.getElementById('entry-modal').style.display = 'none'; }
@@ -252,21 +273,21 @@
         function saveEntry() {
             const id = document.getElementById('edit-id').value;
             const amt = parseFloat(document.getElementById('amt').value);
-            const desc = document.getElementById('desc').value || document.getElementById('cat').options[document.getElementById('cat').selectedIndex].text;
+            const desc = document.getElementById('desc').value || document.getElementById('entry-cat').value;
             if(!amt) return;
             if(id) {
                 const idx = db.findIndex(t => t.id == id);
-                db[idx] = { ...db[idx], amt, desc, cat: document.getElementById('cat').value };
+                db[idx] = { ...db[idx], amt, desc, cat: document.getElementById('entry-cat').value };
             } else {
-                db.push({ id: Date.now(), type: currentType, amt, desc, cat: document.getElementById('cat').value, date: new Date().toLocaleDateString() });
+                db.push({ id: Date.now(), type: window.currentType, amt, desc, cat: document.getElementById('entry-cat').value, date: new Date().toLocaleDateString() });
             }
-            localStorage.setItem('fynovo_db_v6', JSON.stringify(db));
+            localStorage.setItem('fynovo_db_v8', JSON.stringify(db));
             closeEntry(); renderHome();
         }
 
-        function deleteEntry() {
+        function delEntry() {
             db = db.filter(t => t.id != document.getElementById('edit-id').value);
-            localStorage.setItem('fynovo_db_v6', JSON.stringify(db));
+            localStorage.setItem('fynovo_db_v8', JSON.stringify(db));
             closeEntry(); renderHome();
         }
 
@@ -278,11 +299,8 @@
                 bal += (isInc ? t.amt : -t.amt);
                 list.innerHTML += `
                 <div class="tx-card" onclick="openEntry('${t.type}', ${t.id})">
-                    <div style="display:flex; align-items:center;">
-                        <div class="icon-box"><i class="fas ${ICONS[t.cat]}"></i></div>
-                        <div style="margin-left:15px;"><b>${t.desc}</b><br><small style="color:var(--text-dim)">${t.date}</small></div>
-                    </div>
-                    <b style="color:${isInc ? 'var(--success)' : 'var(--text)'}">${config.cur}${t.amt.toLocaleString()}</b>
+                    <div><b>${t.desc}</b><br><small style="color:var(--text-dim)">${t.cat} • ${t.date}</small></div>
+                    <b style="color:${isInc ? 'var(--success)' : 'white'}">${config.cur}${t.amt.toLocaleString()}</b>
                 </div>`;
             });
             document.getElementById('total-bal').innerText = `${config.cur}${bal.toLocaleString()}`;
@@ -296,22 +314,13 @@
             chart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#a855f7'], borderWidth: 0 }] },
-                options: { cutout: '85%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { weight: 'bold' } } } } }
+                options: { cutout: '85%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 20 } } } }
             });
         }
 
-        function toggleSecurity() {
-            config.pinActive = !config.pinActive;
-            localStorage.setItem('fynovo_cfg_v6', JSON.stringify(config));
-            updateSettingsUI();
-        }
-
-        function updateSettingsUI() {
-            const t = document.getElementById('pin-toggle');
-            if(t) t.className = config.pinActive ? "fas fa-toggle-on" : "fas fa-toggle-off";
-        }
-
-        function resetData() { if(confirm("Permanently wipe all records?")) { localStorage.clear(); location.reload(); } }
+        function toggleSec() { config.duke = !config.duke; save(); updateUI(); }
+        function updateUI() { document.getElementById('sec-toggle').className = config.duke ? "fas fa-toggle-on" : "fas fa-toggle-off"; }
+        function resetAll() { if(confirm("This will permanently delete your Vault. Proceed?")) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
 </html>
