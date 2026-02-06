@@ -3,57 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartSpend Elite | V11</title>
+    <title>SmartSpend Elite | Final Sovereign</title>
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --brand: #6366f1; --bg: #0b0f1a; --surface: #161b2c; --surface-sub: #232a42;
             --text: #ffffff; --text-dim: #94a3b8; --success: #10b981; --danger: #f43f5e;
-            --border: rgba(255,255,255,0.06); --radius: 24px;
+            --border: rgba(255,255,255,0.06); --radius: 22px;
         }
-
-        [data-theme="emerald"] { --brand: #10b981; --bg: #061a14; --surface: #0c2b22; }
-        [data-theme="royal"] { --brand: #f59e0b; --bg: #1a1610; --surface: #2b241a; }
-        [data-theme="midnight"] { --brand: #38bdf8; --bg: #020617; --surface: #0f172a; }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
 
         /* Navigation */
-        nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: rgba(11, 15, 26, 0.95); backdrop-filter: blur(20px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        nav { position: fixed; bottom: 0; width: 100%; height: 85px; background: rgba(11, 15, 26, 0.98); backdrop-filter: blur(20px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-link { color: var(--text-dim); text-align: center; font-size: 11px; font-weight: 700; cursor: pointer; }
         .nav-link.active { color: var(--brand); }
         .nav-link i { font-size: 22px; margin-bottom: 4px; display: block; }
 
-        /* Screens */
-        .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 110px; animation: fadeIn 0.3s ease; }
-        .screen.active { display: block; }
+        /* Screen Management */
+        .screen { display: none; height: 100vh; overflow-y: auto; padding: 20px 20px 110px; }
+        .screen.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+        /* UI Components */
+        .hero { background: linear-gradient(160deg, var(--brand) 0%, #000 140%); padding: 30px 20px; border-radius: var(--radius); margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        .tx-card { background: var(--surface); padding: 15px; border-radius: 18px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .icon-box { width: 42px; height: 42px; border-radius: 12px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); }
+        .btn-prime { background: var(--brand); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 800; width: 100%; cursor: pointer; transition: 0.2s; }
+        .btn-prime:active { transform: scale(0.97); }
+
+        /* Search Bar */
+        .search-container { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 10; margin-bottom: 15px; }
+        .search-bar { width: 100%; padding: 14px 45px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: white; font-size: 15px; }
+        .search-icon { position: absolute; left: 15px; top: 23px; color: var(--text-dim); }
 
         /* Overlays */
         .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; flex-direction: column; padding: 30px; text-align: center; justify-content: center; }
-        .pin-dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--brand); margin: 10px; }
-        .pin-dot.filled { background: var(--brand); }
+        .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--brand); margin: 8px; transition: 0.2s; }
+        .pin-dot.filled { background: var(--brand); transform: scale(1.2); }
 
-        /* Components */
-        .hero { background: linear-gradient(160deg, var(--brand) 0%, #000 140%); padding: 35px 25px; border-radius: var(--radius); margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .tx-card { background: var(--surface); padding: 16px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .icon-box { width: 44px; height: 44px; border-radius: 12px; background: var(--surface-sub); display: flex; align-items: center; justify-content: center; color: var(--brand); }
-        .btn-prime { background: var(--brand); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 800; cursor: pointer; width: 100%; }
-        
-        /* Form Elements */
-        input, select { width: 100%; padding: 16px; margin-bottom: 15px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-sub); color: white; outline: none; }
-        
+        /* Modals */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; align-items: flex-end; }
-        .modal-content { background: var(--surface); width: 100%; padding: 30px 24px; border-radius: 30px 30px 0 0; max-height: 85vh; overflow-y: auto; }
+        .modal-content { background: var(--surface); width: 100%; padding: 30px 20px; border-radius: 25px 25px 0 0; max-height: 80vh; overflow-y: auto; }
+        input, select { width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-sub); color: white; outline: none; }
 
-        .cur-item { background: var(--surface); padding: 15px; border-radius: 15px; border: 1px solid var(--border); cursor: pointer; text-align: center; }
-        .cur-item.active { border-color: var(--brand); background: rgba(99, 102, 241, 0.1); }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -68,17 +66,24 @@
     </div>
 
     <div id="ob-screen" class="overlay">
-        <h2>Select Vault Currency</h2>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin: 25px 0;" id="cur-list"></div>
-        <button class="btn-prime" onclick="finishOB()">Initialize Vault</button>
+        <h2>Vault Asset Type</h2>
+        <p style="color:var(--text-dim); margin-bottom:20px;">Select your primary currency</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:25px;" id="cur-grid"></div>
+        <button class="btn-prime" onclick="confirmOnboarding()">Authorize Vault</button>
     </div>
 
     <div id="home" class="screen active">
         <div class="hero">
-            <p style="font-size:12px; font-weight:800; opacity:0.6; letter-spacing:1px;">TOTAL LIQUIDITY</p>
-            <h1 id="total-bal" style="font-size:40px; margin:5px 0;">--</h1>
-            <p style="font-size:10px; opacity:0.5;"><i class="fas fa-shield-halved"></i> Duke Core Active</p>
+            <p style="font-size:11px; font-weight:800; opacity:0.6; letter-spacing:1px;">TOTAL LIQUIDITY</p>
+            <h1 id="total-bal" style="font-size:36px; margin:5px 0;">--</h1>
+            <p style="font-size:10px; opacity:0.5;"><i class="fas fa-shield-halved"></i> Duke Core Protection</p>
         </div>
+        
+        <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-bar" id="search-input" placeholder="Search transactions..." oninput="renderHome()">
+        </div>
+
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:25px;">
             <button class="btn-prime" style="background:var(--success);" onclick="openForm('income')"><i class="fas fa-plus"></i> Revenue</button>
             <button class="btn-prime" style="background:var(--danger);" onclick="openForm('expense')"><i class="fas fa-minus"></i> Expense</button>
@@ -86,22 +91,22 @@
         <div id="tx-history"></div>
     </div>
 
-    <div id="athletics" class="screen">
-        <h2>Financial Athletics</h2>
-        <div style="background:var(--surface); padding:20px; border-radius:24px; margin: 20px 0; border: 1px solid var(--border);">
-            <canvas id="mainChart" style="max-height:280px;"></canvas>
+    <div id="analytics" class="screen">
+        <h2>Athletics</h2>
+        <div style="background:var(--surface); padding:20px; border-radius:20px; margin: 20px 0; border: 1px solid var(--border);">
+            <canvas id="apexChart" style="max-height:280px;"></canvas>
         </div>
-        <div id="cat-breakdown"></div>
+        <div id="breakdown-list"></div>
     </div>
 
     <div id="system" class="screen">
         <h2>System Terminal</h2>
-        <div style="margin:20px 0; background:var(--surface); border-radius:20px; border:1px solid var(--border); overflow:hidden;">
-            <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="showInfo('Privacy Protocol', 'All data is stored locally on this physical device hardware. Zero cloud leakage.')">
+        <div style="margin:20px 0; background:var(--surface); border-radius:18px; border:1px solid var(--border); overflow:hidden;">
+            <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="showPolicy()">
                 <span>Privacy Protocol</span><i class="fas fa-user-shield"></i>
             </div>
             <div style="padding:18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;" onclick="window.location.href='mailto:fynovostudio@gmail.com'">
-                <span>Support Center</span><i class="fas fa-envelope"></i>
+                <span>Support Hub</span><i class="fas fa-envelope"></i>
             </div>
             <div style="padding:18px; color:var(--danger);" onclick="factoryReset()">Factory Reset</div>
         </div>
@@ -109,34 +114,40 @@
 
     <div id="form-modal" class="modal" onclick="if(event.target==this) this.style.display='none'">
         <div class="modal-content">
-            <h2 id="form-title" style="margin-bottom:20px;">Entry</h2>
+            <h2 id="modal-title">Entry</h2><br>
             <input type="number" id="f-amt" placeholder="0.00" inputmode="decimal">
-            <input type="text" id="f-desc" placeholder="Label / Merchant">
-            <select id="f-cat"></select>
-            <button class="btn-prime" onclick="saveData()">Authorize Entry</button>
+            <input type="text" id="f-desc" placeholder="Merchant/Source">
+            <select id="f-cat">
+                <option value="General">General</option>
+                <option value="Salary">Salary</option>
+                <option value="Food">Food</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Health">Health</option>
+            </select>
+            <button class="btn-prime" onclick="saveEntry()">Commit Vault Entry</button>
         </div>
     </div>
 
     <nav>
         <div class="nav-link active" onclick="nav('home', this)"><i class="fas fa-vault"></i>Vault</div>
-        <div class="nav-link" onclick="nav('athletics', this)"><i class="fas fa-chart-line"></i>Athletics</div>
+        <div class="nav-link" onclick="nav('analytics', this)"><i class="fas fa-chart-pie"></i>Athletics</div>
         <div class="nav-link" onclick="nav('system', this)"><i class="fas fa-microchip"></i>System</div>
     </nav>
 
     <script>
-        const CURS = [{n:'USD', s:'$'}, {n:'PKR', s:'Rs'}, {n:'EUR', s:'€'}, {n:'GBP', s:'£'}, {n:'INR', s:'₹'}, {n:'AED', s:'د.إ'}];
-        let state = { db: [], cfg: { onboard: false, cur: '$', pin: '1234', cats: ['Salary', 'Food', 'Rent', 'Travel'] } };
-        let tempPin = '', chart = null;
+        const CURS = [{n:'USD', s:'$'}, {n:'PKR', s:'Rs'}, {n:'EUR', s:'€'}, {n:'GBP', s:'£'}, {n:'INR', s:'₹'}];
+        let state = { db: [], cfg: { onboard: false, cur: '$', pin: '1234' } };
+        let tempPin = '', myChart = null;
 
-        function saveState() {
-            localStorage.setItem('elite_db', JSON.stringify(state.db));
-            localStorage.setItem('elite_cfg', JSON.stringify(state.cfg));
+        function save() {
+            localStorage.setItem('sv_db_final', JSON.stringify(state.db));
+            localStorage.setItem('sv_cfg_final', JSON.stringify(state.cfg));
         }
 
         window.onload = function() {
-            const sDb = localStorage.getItem('elite_db'), sCfg = localStorage.getItem('elite_cfg');
-            if(sDb) state.db = JSON.parse(sDb);
-            if(sCfg) state.cfg = JSON.parse(sCfg);
+            const d = localStorage.getItem('sv_db_final'), c = localStorage.getItem('sv_cfg_final');
+            if(d) state.db = JSON.parse(d);
+            if(c) state.cfg = JSON.parse(c);
 
             if(!state.cfg.onboard) {
                 renderOB();
@@ -149,20 +160,26 @@
         };
 
         function renderOB() {
-            document.getElementById('cur-list').innerHTML = CURS.map(c => `
-                <div class="cur-item ${state.cfg.cur === c.s ? 'active' : ''}" onclick="state.cfg.cur='${c.s}'; renderOB()">
+            document.getElementById('cur-grid').innerHTML = CURS.map(c => `
+                <div class="cur-item" id="cur-${c.n}" style="padding:15px; background:var(--surface); border-radius:12px; border:1px solid var(--border);" onclick="selectCur('${c.s}', '${c.n}')">
                     <b>${c.n}</b> (${c.s})
                 </div>`).join('');
         }
 
-        function finishOB() {
-            state.cfg.onboard = true; saveState();
+        function selectCur(s, n) {
+            state.cfg.cur = s;
+            document.querySelectorAll('.cur-item').forEach(i => i.style.borderColor = 'var(--border)');
+            document.getElementById('cur-'+n).style.borderColor = 'var(--brand)';
+        }
+
+        function confirmOnboarding() {
+            state.cfg.onboard = true; save();
             location.reload();
         }
 
         function renderPad() {
-            const nums = ['1','2','3','4','5','6','7','8','9','','0','<'];
-            document.getElementById('pin-pad').innerHTML = nums.map(n => `<div style="padding:20px; font-size:24px;" onclick="handlePin('${n}')">${n === '<' ? '←' : n}</div>`).join('');
+            const keys = ['1','2','3','4','5','6','7','8','9','','0','<'];
+            document.getElementById('pin-pad').innerHTML = keys.map(k => `<div style="padding:15px; font-size:24px;" onclick="handlePin('${k}')">${k==='<'?'←':k}</div>`).join('');
         }
 
         function handlePin(v) {
@@ -175,7 +192,7 @@
 
             if(tempPin.length === 4) {
                 if(tempPin === state.cfg.pin) { document.getElementById('duke-lock').style.display = 'none'; tempPin = ''; }
-                else { alert('Access Denied'); tempPin = ''; dots.forEach(d => d.className = 'pin-dot'); }
+                else { alert('Incorrect PIN'); tempPin = ''; dots.forEach(d => d.className = 'pin-dot'); }
             }
         }
 
@@ -184,59 +201,64 @@
             document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             el.classList.add('active');
-            if(id === 'athletics') renderAthletics();
+            if(id === 'analytics') renderAnalytics();
         }
 
         function openForm(type) {
             window.currentType = type;
-            document.getElementById('form-title').innerText = type === 'income' ? 'Revenue Entry' : 'Vault Payment';
-            document.getElementById('f-cat').innerHTML = state.cfg.cats.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('modal-title').innerText = type === 'income' ? 'Revenue Asset' : 'Withdrawal Asset';
             document.getElementById('form-modal').style.display = 'flex';
         }
 
-        function saveData() {
+        function saveEntry() {
             const amt = parseFloat(document.getElementById('f-amt').value);
-            const desc = document.getElementById('f-desc').value || 'Entry';
+            const desc = document.getElementById('f-desc').value || 'General Entry';
             const cat = document.getElementById('f-cat').value;
             if(!amt) return;
             state.db.push({ type: window.currentType, amt, desc, cat, date: new Date().toLocaleDateString() });
-            saveState(); document.getElementById('form-modal').style.display = 'none';
-            document.getElementById('f-amt').value = '';
+            save(); document.getElementById('form-modal').style.display = 'none';
+            document.getElementById('f-amt').value = ''; document.getElementById('f-desc').value = '';
             renderHome();
         }
 
         function renderHome() {
             const list = document.getElementById('tx-history');
+            const search = document.getElementById('search-input').value.toLowerCase();
             list.innerHTML = ''; let bal = 0;
-            state.db.slice().reverse().forEach(t => {
+
+            const filtered = state.db.filter(t => t.desc.toLowerCase().includes(search) || t.cat.toLowerCase().includes(search));
+            
+            state.db.forEach(t => bal += (t.type === 'income' ? t.amt : -t.amt));
+            document.getElementById('total-bal').innerText = `${state.cfg.cur}${bal.toLocaleString()}`;
+
+            filtered.slice().reverse().forEach(t => {
                 const isInc = t.type === 'income';
-                bal += isInc ? t.amt : -t.amt;
                 list.innerHTML += `
                 <div class="tx-card">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="icon-box"><i class="fas ${isInc ? 'fa-arrow-trend-up' : 'fa-receipt'}"></i></div>
+                        <div class="icon-box"><i class="fas ${isInc ? 'fa-arrow-up' : 'fa-receipt'}"></i></div>
                         <div><b>${t.desc}</b><br><small style="color:var(--text-dim)">${t.cat}</small></div>
                     </div>
                     <b style="color:${isInc ? 'var(--success)' : 'white'}">${isInc ? '+' : '-'}${state.cfg.cur}${t.amt.toLocaleString()}</b>
                 </div>`;
             });
-            document.getElementById('total-bal').innerText = `${state.cfg.cur}${bal.toLocaleString()}`;
         }
 
-        function renderAthletics() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
+        function renderAnalytics() {
+            const ctx = document.getElementById('apexChart').getContext('2d');
             const map = {};
             state.db.filter(t => t.type === 'expense').forEach(e => map[e.cat] = (map[e.cat] || 0) + e.amt);
-            if(chart) chart.destroy();
-            chart = new Chart(ctx, {
+            
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24'], borderWidth: 0 }] },
-                options: { cutout: '80%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+                data: { labels: Object.keys(map), datasets: [{ data: Object.values(map), backgroundColor: ['#6366f1', '#10b981', '#f43f5e', '#fbbf24', '#a855f7'], borderWidth: 0 }] },
+                options: { cutout: '80%', plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 20 } } } }
             });
         }
 
-        function showInfo(t, b) { alert(t + "\n\n" + b); }
-        function factoryReset() { if(confirm("Permanently wipe all data?")) { localStorage.clear(); location.reload(); } }
+        function showPolicy() { alert("Privacy Protocol: This app is 100% Offline. Your data resides only on your local phone storage and never reaches any server."); }
+        function factoryReset() { if(confirm("Permanent Vault Wipe?")) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
 </html>
